@@ -448,7 +448,7 @@ const stations = [
         "line": "TRA",
         "isMain": false,
         "transferId": "tainan",
-        "audioId": "28013(1)"
+        "audioId": "28104(1)"
     },
     {
         "id": "tra-yongkang",
@@ -899,7 +899,7 @@ const stations = [
         "stamp": "💧",
         "line": "TRA",
         "isMain": false,
-        "audioId": "7524(1)"
+        "audioId": "7513(1),20678(1)"
     },
     {
         "id": "tra-shalu",
@@ -1303,7 +1303,7 @@ window.onload = () => {
     calculateJourney();
     setupClockDragging();
     bindDynamicEvents();
-};;;;;;;
+};;;;;;;;
 
 // ==========================================
 // 7. 介面渲染與操作
@@ -1647,6 +1647,9 @@ function animateTrainOnMap(route) {
 let activeQueueAudio = null;
 
 const taigiAudioMap = {
+    // --- Crawled station audio mappings & Character fallbacks ---
+    "清": "7513(1)",
+
     // --- Crawled station audio mappings & Character fallbacks ---
 
     // --- Crawled station audio mappings & Character fallbacks ---
@@ -2019,19 +2022,33 @@ function playTaigiTTS(phraseText, audioIds) {
         ids = audioIds;
     } else if (typeof audioIds === 'string') {
         if (/\d+/.test(audioIds)) {
-            ids = [audioIds];
+            if (audioIds.includes(',')) {
+                ids = audioIds.split(',');
+            } else {
+                ids = [audioIds];
+            }
         } else {
             const cleanPhrase = phraseText.replace(/[【】]/g, '');
             // Try whole phrase first
             const mappedId = taigiAudioMap[cleanPhrase];
             if (mappedId) {
-                ids = [mappedId];
+                if (Array.isArray(mappedId)) {
+                    ids = mappedId;
+                } else if (typeof mappedId === 'string' && mappedId.includes(',')) {
+                    ids = mappedId.split(',');
+                } else {
+                    ids = [mappedId];
+                }
             } else {
                 // Character-by-character fallback
                 for (let char of cleanPhrase) {
                     const charId = taigiAudioMap[char];
                     if (charId) {
-                        ids.push(charId);
+                        if (charId.includes(',')) {
+                            ids = ids.concat(charId.split(','));
+                        } else {
+                            ids.push(charId);
+                        }
                     }
                 }
             }
@@ -2308,12 +2325,23 @@ function playFullJourneyAudio() {
     
     // Add destination
     const destAudio = taigiAudioMap[endName];
-    if (destAudio) audioSegments.push(destAudio);
-    else {
+    if (destAudio) {
+        if (destAudio.includes(',')) {
+            audioSegments = audioSegments.concat(destAudio.split(','));
+        } else {
+            audioSegments.push(destAudio);
+        }
+    } else {
         // Fallback for destination name character by character
         for (let char of endName) {
             const charId = taigiAudioMap[char];
-            if (charId) audioSegments.push(charId);
+            if (charId) {
+                if (charId.includes(',')) {
+                    audioSegments = audioSegments.concat(charId.split(','));
+                } else {
+                    audioSegments.push(charId);
+                }
+            }
         }
     }
     
@@ -2324,15 +2352,26 @@ function playFullJourneyAudio() {
         const transSt = stations.find(s => s.transferId === transferTId);
         const transferZH = transSt ? transSt.nameZH : "";
         
-        taigiSpeechText = "我欲去" + endName + "，佇" + transferZH + "換車，買" + passengerZH + "票，攏總" + costZH + "。佇" + ordinalToTaigiText(platformNum) + "月台等車。";
+        taigiSpeechText = "我欲去" + endName + "，買" + passengerZH + "票，攏總" + costZH + "。佇" + transferZH + "換車。佇" + ordinalToTaigiText(platformNum) + "月台等車。";
         
         audioSegments.push(taigiAudioMap["佇"]);
         const transAudio = taigiAudioMap[transferZH];
-        if (transAudio) audioSegments.push(transAudio);
-        else {
+        if (transAudio) {
+            if (transAudio.includes(',')) {
+                audioSegments = audioSegments.concat(transAudio.split(','));
+            } else {
+                audioSegments.push(transAudio);
+            }
+        } else {
             for (let char of transferZH) {
                 const charId = taigiAudioMap[char];
-                if (charId) audioSegments.push(charId);
+                if (charId) {
+                    if (charId.includes(',')) {
+                        audioSegments = audioSegments.concat(charId.split(','));
+                    } else {
+                        audioSegments.push(charId);
+                    }
+                }
             }
         }
         audioSegments.push(taigiAudioMap["換"]);
