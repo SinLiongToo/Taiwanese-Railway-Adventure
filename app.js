@@ -159,7 +159,24 @@ const twHomophones = {
     "十分": "雜昏", "十五分": "雜奧昏", "二十分": "吉雜昏", "三分": "三雜昏",
     "四十分": "細雜昏", "四十五分": "細雜奧昏", "五十分": "奧雜昏",
     // 答題反饋
-    "著矣": "丟啊", "毋著喔": "嗯丟喔", "答對了": "丟啊", "答錯了": "嗯丟喔"
+    "著矣": "丟啊", "毋著喔": "嗯丟喔", "答對了": "丟啊", "答錯了": "嗯丟喔",
+    // 台鐵小站 (TRA Small Stations) 同音字近似
+    "八堵": "北ㄉㄟ", "暖暖": "軟軟", "瑞芳": "誰紅", "雙溪": "霜溪",
+    "福隆": "福龍", "萬華": "万花", "板橋": "半橋", "鶯歌": "英科",
+    "三峽": "三峽", "中壢": "中力", "楊梅": "央每", "湖口": "虎口",
+    "竹北": "竹北", "六家": "辣嘎", "竹南": "竹南", "頭份": "頭份",
+    "銅鑼": "同羅", "三義": "三義", "豐原": "風原", "清水": "清水",
+    "沙鹿": "沙鹿", "龍井": "龍井", "大慶": "大慶", "烏日": "烏日",
+    "員林": "員林", "田中": "田中", "二水": "吉水", "林內": "林內",
+    "斗六": "斗六", "斗南": "斗南", "新營": "新營", "柳營": "柳營",
+    "沙崙": "沙崙", "永康": "永康", "新市": "新市", "善化": "善化",
+    "楠梓": "藍子", "岡山": "港山", "仁武": "因無", "鳳山": "紅山",
+    "大湖": "大湖", "林邊": "林邊", "東港": "東港",
+    "蘇澳": "蘇澳", "東澳": "東澳", "新城": "新城", "吉安": "吉安",
+    "壽豐": "壽豐", "富源": "富源", "玉里": "玉里", "富里": "富里",
+    "池上": "池上", "關山": "關山", "鹿野": "鹿野", "知本": "知本", "大武": "大武",
+    // 高鐵站 (HSR Stations)
+    "南港": "藍港", "板橋": "半橋", "雲林": "雲林", "左營": "左營"
 };
 
 // ==========================================
@@ -901,8 +918,43 @@ function playTaigiTTS(phraseText, audioIds) {
     
     if (ids.length > 0) {
         playAudioQueue(ids, phraseText);
+    } else if (typeof audioIds === 'string' && audioIds.length > 3) {
+        // audioIds 是台羅拼音 (POJ/TL) 字串 — 嘗試用 nan-TW 台語語音引擎直接朗讀
+        playTaiwaneseVoice(audioIds, phraseText);
     } else {
         playOfflineVoiceFallback(phraseText);
+    }
+}
+
+// 使用 nan-TW 台語語音引擎朗讀台羅拼音
+function playTaiwaneseVoice(pojText, fallbackZhText) {
+    if (!('speechSynthesis' in window)) {
+        playOfflineVoiceFallback(fallbackZhText);
+        return;
+    }
+
+    const voices = window.speechSynthesis.getVoices();
+    // 嘗試找台語 nan-TW 聲音
+    const nanVoice = voices.find(v =>
+        v.lang === 'nan-TW' ||
+        v.lang === 'nan' ||
+        v.lang.startsWith('nan') ||
+        v.name.toLowerCase().includes('taiwanese') ||
+        v.name.toLowerCase().includes('hokkien') ||
+        v.name.toLowerCase().includes('min nan')
+    );
+
+    if (nanVoice) {
+        updateBadge("google");
+        const utterance = new SpeechSynthesisUtterance(pojText);
+        utterance.voice = nanVoice;
+        utterance.lang = 'nan-TW';
+        utterance.rate = speechRate;
+        window.speechSynthesis.cancel();
+        window.speechSynthesis.speak(utterance);
+    } else {
+        // 沒有 nan-TW 聲音時，用同音字將漢字轉換後以 zh-TW 播放
+        playOfflineVoiceFallback(fallbackZhText);
     }
 }
 
@@ -1851,8 +1903,10 @@ function bindDynamicEvents() {
 
     // 詞彙學堂篩選按鈕
     bindClick("btn-filter-all", () => filterVocab('all'));
-    bindClick("btn-filter-vehicles", () => filterVocab('vehicle'));
-    bindClick("btn-filter-stations", () => filterVocab('station'));
+    bindClick("btn-filter-vehicles", () => filterVocab('vehicles'));
+    bindClick("btn-filter-stations", () => filterVocab('stations'));
+    bindClick("btn-filter-tra-station", () => filterVocab('tra-station'));
+    bindClick("btn-filter-hsr-station", () => filterVocab('hsr-station'));
 
     // 時間微調按鈕
     bindClick("btn-clock-dec-1h", () => adjustClockTime(-60));
