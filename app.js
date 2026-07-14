@@ -349,7 +349,7 @@ const stations = [
     {
         "id": "kaohsiung",
         "nameZH": "高雄",
-        "nameEN": "Kaohsiung",
+        "nameEN": "高雄",
         "poj": "Ko-hiông",
         "cx": 78,
         "cy": 400,
@@ -855,7 +855,7 @@ const stations = [
         "cx": 148,
         "cy": 76,
         "dist": 856,
-        "stamp": "Bridge",
+        "stamp": "🌉",
         "line": "TRA",
         "isMain": false,
         "transferId": "banqiao",
@@ -1302,7 +1302,7 @@ window.onload = () => {
     calculateJourney();
     setupClockDragging();
     bindDynamicEvents();
-};;;;
+};;;;;
 
 // ==========================================
 // 7. 介面渲染與操作
@@ -1646,6 +1646,8 @@ function animateTrainOnMap(route) {
 let activeQueueAudio = null;
 
 const taigiAudioMap = {
+    // --- Crawled station audio mappings & Character fallbacks ---
+
     // --- Crawled station audio mappings & Character fallbacks ---
     "保安": "20697(1)",
 
@@ -2395,6 +2397,121 @@ function playFullJourneyAudio() {
 
 
 
+
+
+function getRoute(startId, endId) {
+    const startStation = stations.find(s => s.id === startId);
+    const endStation = stations.find(s => s.id === endId);
+    if (!startStation || !endStation) return { path: [], distance: 0, direction: "direct" };
+    
+    if (startStation.line === endStation.line) {
+        if (startStation.line === "TRA") {
+            // TRA circular loop routing
+            const stationsTRA = stations.filter(s => s.line === "TRA");
+            const n = stationsTRA.length;
+            const startIndex = stationsTRA.findIndex(s => s.id === startId);
+            const endIndex = stationsTRA.findIndex(s => s.id === endId);
+            
+            // 1. Clockwise
+            let cwPath = [];
+            let cwDist = 0;
+            let curr = startIndex;
+            while (curr !== endIndex) {
+                let next = (curr + 1) % n;
+                cwDist += (stationsTRA[next].dist - stationsTRA[curr].dist + 870) % 870;
+                cwPath.push(stationsTRA[curr]);
+                curr = next;
+            }
+            cwPath.push(stationsTRA[endIndex]);
+            
+            // 2. Counter-Clockwise
+            let ccwPath = [];
+            let ccwDist = 0;
+            curr = startIndex;
+            while (curr !== endIndex) {
+                let prev = (curr - 1 + n) % n;
+                ccwDist += (stationsTRA[curr].dist - stationsTRA[prev].dist + 870) % 870;
+                ccwPath.push(stationsTRA[curr]);
+                curr = prev;
+            }
+            ccwPath.push(stationsTRA[endIndex]);
+            
+            if (cwDist <= ccwDist) {
+                return { path: cwPath, distance: cwDist, direction: "clockwise" };
+            } else {
+                return { path: ccwPath, distance: ccwDist, direction: "counterclockwise" };
+            }
+        } else {
+            // HSR linear routing
+            const stationsHSR = stations.filter(s => s.line === "HSR");
+            const startIndex = stationsHSR.findIndex(s => s.id === startId);
+            const endIndex = stationsHSR.findIndex(s => s.id === endId);
+            
+            let path = [];
+            let distance = 0;
+            if (startIndex <= endIndex) {
+                for (let i = startIndex; i <= endIndex; i++) {
+                    path.push(stationsHSR[i]);
+                }
+                distance = Math.abs(stationsHSR[endIndex].dist - stationsHSR[startIndex].dist);
+                return { path, distance, direction: "hsr-southbound" };
+            } else {
+                for (let i = startIndex; i >= endIndex; i--) {
+                    path.push(stationsHSR[i]);
+                }
+                distance = Math.abs(stationsHSR[startIndex].dist - stationsHSR[endIndex].dist);
+                return { path, distance, direction: "hsr-northbound" };
+            }
+        }
+    } else {
+        // Mixed routing (Transfer!)
+        const stationsTRA = stations.filter(s => s.line === "TRA");
+        const stationsHSR = stations.filter(s => s.line === "HSR");
+        const transfers = ["taipei", "banqiao", "nangang", "hsinchu", "taichung", "tainan", "zuoying"];
+        
+        let bestTransfer = null;
+        let minTotalDist = Infinity;
+        let bestTRAInfo = null;
+        let bestHSRInfo = null;
+        
+        transfers.forEach(tId => {
+            const traT = stationsTRA.find(s => s.transferId === tId);
+            const hsrT = stationsHSR.find(s => s.line === "HSR" && s.transferId === tId);
+            if (traT && hsrT) {
+                let traInfo, hsrInfo;
+                if (startStation.line === "TRA") {
+                    traInfo = getRoute(startId, traT.id);
+                    hsrInfo = getRoute(hsrT.id, endId);
+                } else {
+                    hsrInfo = getRoute(startId, hsrT.id);
+                    traInfo = getRoute(traT.id, endId);
+                }
+                
+                const totalDist = traInfo.distance + hsrInfo.distance;
+                if (totalDist < minTotalDist) {
+                    minTotalDist = totalDist;
+                    bestTransfer = tId;
+                    bestTRAInfo = traInfo;
+                    bestHSRInfo = hsrInfo;
+                }
+            }
+        });
+        
+        if (bestTransfer) {
+            let path, direction;
+            if (startStation.line === "TRA") {
+                path = bestTRAInfo.path.concat(bestHSRInfo.path);
+                direction = "tra-to-hsr|" + bestTransfer;
+            } else {
+                path = bestHSRInfo.path.concat(bestTRAInfo.path);
+                direction = "hsr-to-tra|" + bestTransfer;
+            }
+            return { path, distance: minTotalDist, direction };
+        }
+        return { path: [startStation, endStation], distance: 100, direction: "direct" };
+    }
+}
+
 function getRoute(startId, endId) {
     const startStation = stations.find(s => s.id === startId);
     const endStation = stations.find(s => s.id === endId);
@@ -2661,7 +2778,7 @@ function getRoute(startId, endId) {
             if (cwDist <= ccwDist) {
                 return { path: cwPath, distance: cwDist, direction: "clockwise" };
             } else {
-                return { path: ccwPath, distance: ccwDist, direction: "counterclockwise" };
+                return { path: ccwPath, distance: cwDist, direction: "counterclockwise" };
             }
         } else {
             // HSR linear routing
@@ -3424,6 +3541,36 @@ function bindDynamicEvents() {
     bindClick("quiz-retry-btn", resetQuizInterface);
 }
 
+
+function exportVocabJSON() {
+    const exportData = {
+        title: "台灣鐵路台語詞彙庫",
+        description: "Taiwan Railway Taiwanese (Taigi) Vocabulary — generated by 台灣鐵路四界行",
+        generated: new Date().toISOString(),
+        source_audio_cdn: "https://chhoetaigi.github.io/KipSutianDataMirror/public/20260503-2330/imtong/sutiau/{id}.mp3",
+        sections: {
+            vehicles: vocabData.filter(v => v.type === 'vehicles').map(v => ({ zh: v.zh, tw: v.tw, en: v.en, emoji: v.emoji })),
+            scene:    vocabData.filter(v => v.type === 'stations').map(v => ({ zh: v.zh, tw: v.tw, en: v.en, emoji: v.emoji })),
+            stations: {
+                "TRA": vocabData.filter(v => v.type === 'tra-station').map(v => {
+                    const st = stations.find(s => s.id === v.id);
+                    return { zh: v.zh, tw: v.tw, en: v.en, id: v.id, audio_id: st ? st.audioId : null };
+                }),
+                "HSR": vocabData.filter(v => v.type === 'hsr-station').map(v => {
+                    const st = stations.find(s => s.id === v.id);
+                    return { zh: v.zh, tw: v.tw, en: v.en, id: v.id, audio_id: st ? st.audioId : null };
+                })
+            }
+        }
+    };
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'taiwan_railway_taigi_vocab.json';
+    a.click();
+    URL.revokeObjectURL(url);
+}
 
 function exportVocabJSON() {
     const exportData = {
