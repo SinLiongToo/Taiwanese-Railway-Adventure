@@ -421,7 +421,8 @@ const stations = [
         "dist": 548,
         "stamp": "🛡️",
         "line": "TRA",
-        "isMain": false
+        "isMain": false,
+        "audioId": "20697(1)"
     },
     {
         "id": "tainan",
@@ -447,7 +448,7 @@ const stations = [
         "line": "TRA",
         "isMain": false,
         "transferId": "tainan",
-        "audioId": "331(4)"
+        "audioId": "28013(1)"
     },
     {
         "id": "tra-yongkang",
@@ -898,7 +899,7 @@ const stations = [
         "stamp": "💧",
         "line": "TRA",
         "isMain": false,
-        "audioId": "752(4)"
+        "audioId": "7524(1)"
     },
     {
         "id": "tra-shalu",
@@ -1302,7 +1303,7 @@ window.onload = () => {
     calculateJourney();
     setupClockDragging();
     bindDynamicEvents();
-};;;;;;
+};;;;;;;
 
 // ==========================================
 // 7. 介面渲染與操作
@@ -1646,6 +1647,8 @@ function animateTrainOnMap(route) {
 let activeQueueAudio = null;
 
 const taigiAudioMap = {
+    // --- Crawled station audio mappings & Character fallbacks ---
+
     // --- Crawled station audio mappings & Character fallbacks ---
 
     // --- Crawled station audio mappings & Character fallbacks ---
