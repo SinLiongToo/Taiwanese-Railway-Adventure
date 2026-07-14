@@ -860,6 +860,60 @@ select:focus {
     font-weight: 500;
 }
 
+/* Vocab filter wrap on small screens */
+.vocab-filter {
+    flex-wrap: wrap;
+}
+
+/* 台鐵站 TRA Station filter button */
+.filter-btn-tra {
+    border-color: #0984E3;
+    color: #0984E3;
+}
+.filter-btn-tra.active {
+    background: #0984E3;
+    color: white;
+    border-color: #0984E3;
+}
+
+/* 高鐵站 HSR Station filter button */
+.filter-btn-hsr {
+    border-color: #6C5CE7;
+    color: #6C5CE7;
+}
+.filter-btn-hsr.active {
+    background: #6C5CE7;
+    color: white;
+    border-color: #6C5CE7;
+}
+
+/* TRA card accent */
+.vocab-card.card-tra {
+    border-color: rgba(9, 132, 227, 0.35);
+    background: linear-gradient(135deg, var(--card-bg) 60%, rgba(9, 132, 227, 0.08) 100%);
+}
+.vocab-card.card-tra:hover {
+    border-color: #0984E3;
+    box-shadow: 0 12px 25px rgba(9, 132, 227, 0.18);
+}
+.vocab-card.card-tra .vocab-pinyin {
+    color: #0984E3;
+}
+
+/* HSR card accent */
+.vocab-card.card-hsr {
+    border-color: rgba(108, 92, 231, 0.35);
+    background: linear-gradient(135deg, var(--card-bg) 60%, rgba(108, 92, 231, 0.08) 100%);
+}
+.vocab-card.card-hsr:hover {
+    border-color: #6C5CE7;
+    box-shadow: 0 12px 25px rgba(108, 92, 231, 0.18);
+}
+.vocab-card.card-hsr .vocab-pinyin {
+    color: #6C5CE7;
+}
+
+
 /* Time & Clock Tab */
 .clock-container {
     display: flex;
@@ -1337,6 +1391,23 @@ footer {
     font-weight: 500;
     border-top: 1px solid var(--card-border);
 }
+
+/* Vocab Export Button Styles */
+.vocab-filter-export {
+    margin-top: 15px;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+}
+.filter-export-btn {
+    background: linear-gradient(135deg, #636E72, #2D3436);
+    color: white;
+    border-color: transparent;
+}
+[data-theme="dark"] .filter-export-btn {
+    background: linear-gradient(135deg, #485460, #2f3640);
+}
+.filter-export-btn:hover { opacity: 0.9; }
 </style>
 </head>
 <body>
@@ -1513,9 +1584,20 @@ footer {
             <h2 class="card-title" id="ui-vocab-title"><i class="fa-solid fa-book-open"></i> 交通台語詞彙牆 Vocabulary</h2>
             <!-- Filter buttons -->
             <div class="vocab-filter">
-                <button class="filter-btn active" id="btn-filter-all" onclick="filterVocab('all')">全部 All</button>
-                <button class="filter-btn" id="btn-filter-vehicles" onclick="filterVocab('vehicles')">交通工具 Vehicles</button>
-                <button class="filter-btn" id="btn-filter-stations" onclick="filterVocab('stations')">鐵路場景 Stations</button>
+                <div class="vocab-filter-row">
+                    <button class="filter-btn active" id="btn-filter-all" onclick="filterVocab('all')">全部 All</button>
+                    <button class="filter-btn" id="btn-filter-vehicles" onclick="filterVocab('vehicles')">交通工具 Vehicles</button>
+                    <button class="filter-btn" id="btn-filter-stations" onclick="filterVocab('stations')">鐵路場景 Stations</button>
+                </div>
+                <div class="vocab-filter-row" style="margin-top: 10px; display: flex; gap: 10px; justify-content: center;">
+                    <button class="filter-btn filter-btn-tra" id="btn-filter-tra-station" onclick="filterVocab('tra-station')">🚂 台鐵各站 TRA</button>
+                    <button class="filter-btn filter-btn-hsr" id="btn-filter-hsr-station" onclick="filterVocab('hsr-station')">🚄 高鐵各站 HSR</button>
+                </div>
+                <div class="vocab-filter-row vocab-filter-export" style="margin-top: 10px; display: flex; justify-content: center; width: 100%;">
+                    <button class="filter-btn filter-export-btn" id="btn-export-vocab">
+                        <i class="fa-solid fa-download"></i> 匯出 JSON
+                    </button>
+                </div>
             </div>
             <!-- Vocabulary Grid -->
             <div class="vocab-grid" id="vocab-container"></div>
@@ -1683,21 +1765,1092 @@ footer {
 // 1. 全台環島鐵路車站資料庫 (All Taiwan Cities)
 // ==========================================
 const stations = [
-    { id: "keelung", nameZH: "基隆", nameEN: "Keelung", poj: "Kî-liông", cx: 200, cy: 50, dist: 0, stamp: "⚓" },
-    { id: "taipei", nameZH: "台北", nameEN: "Taipei", poj: "Tâi-pak", cx: 165, cy: 68, dist: 28, stamp: "🏢" },
-    { id: "taoyuan", nameZH: "桃園", nameEN: "Taoyuan", poj: "Thô-hn̂g", cx: 130, cy: 82, dist: 57, stamp: "✈️" },
-    { id: "hsinchu", nameZH: "新竹", nameEN: "Hsinchu", poj: "Sin-tek", cx: 95, cy: 110, dist: 106, stamp: "🔬" },
-    { id: "miaoli", nameZH: "苗栗", nameEN: "Miaoli", poj: "Biâu-le̍k", cx: 80, cy: 150, dist: 154, stamp: "🍓" },
-    { id: "taichung", nameZH: "台中", nameEN: "Taichung", poj: "Tâi-tiong", cx: 85, cy: 200, dist: 193, stamp: "⛲" },
-    { id: "changhua", nameZH: "彰化", nameEN: "Changhua", poj: "Chiong-hoà", cx: 75, cy: 235, dist: 210, stamp: "🪷" },
-    { id: "chiayi", nameZH: "嘉義", nameEN: "Chiayi", poj: "Ka-gī", cx: 70, cy: 295, dist: 291, stamp: "🪵" },
-    { id: "tainan", nameZH: "台南", nameEN: "Tainan", poj: "Tâi-lâm", cx: 65, cy: 350, dist: 352, stamp: "🏯" },
-    { id: "kaohsiung", nameZH: "高雄", nameEN: "Kaohsiung", poj: "Ko-hiông", cx: 78, cy: 400, dist: 399, stamp: "🚢" },
-    { id: "pingtung", nameZH: "屏東", nameEN: "Pingtung", poj: "Pîn-tong", cx: 98, cy: 438, dist: 420, stamp: "🍍" },
-    { id: "taitung", nameZH: "台東", nameEN: "Taitung", poj: "Tâi-tang", cx: 180, cy: 360, dist: 580, stamp: "🎈" },
-    { id: "hualien", nameZH: "花蓮", nameEN: "Hualien", poj: "Hoa-liân", cx: 205, cy: 220, dist: 730, stamp: "⛰️" },
-    { id: "yilan", nameZH: "宜蘭", nameEN: "Yilan", poj: "Gî-lân", cx: 200, cy: 105, dist: 810, stamp: "🥣" }
+    {
+        "id": "keelung",
+        "nameZH": "基隆",
+        "nameEN": "Keelung",
+        "poj": "Kî-liông",
+        "cx": 200,
+        "cy": 50,
+        "dist": 0,
+        "stamp": "⚓",
+        "line": "TRA",
+        "isMain": true
+    },
+    {
+        "id": "tra-badu",
+        "nameZH": "八堵",
+        "nameEN": "Badu",
+        "poj": "Pat-tóo",
+        "cx": 185,
+        "cy": 53,
+        "dist": 4,
+        "stamp": "🚉",
+        "line": "TRA",
+        "isMain": false,
+        "audioId": "20751(1)"
+    },
+    {
+        "id": "tra-nuannuan",
+        "nameZH": "暖暖",
+        "nameEN": "Nuannuan",
+        "poj": "Luán-luán",
+        "cx": 195,
+        "cy": 62,
+        "dist": 8,
+        "stamp": "🌊",
+        "line": "TRA",
+        "isMain": false,
+        "audioId": "20753(1)"
+    },
+    {
+        "id": "tra-ruifang",
+        "nameZH": "瑞芳",
+        "nameEN": "Ruifang",
+        "poj": "Sūi-hong",
+        "cx": 202,
+        "cy": 70,
+        "dist": 15,
+        "stamp": "⛏️",
+        "line": "TRA",
+        "isMain": false,
+        "audioId": "20755(1)"
+    },
+    {
+        "id": "tra-shuangxi",
+        "nameZH": "雙溪",
+        "nameEN": "雙溪",
+        "poj": "Siang-khoe",
+        "cx": 205,
+        "cy": 78,
+        "dist": 22,
+        "stamp": "🏞️",
+        "line": "TRA",
+        "isMain": false,
+        "audioId": "20759(1)"
+    },
+    {
+        "id": "tra-fulong",
+        "nameZH": "福隆",
+        "nameEN": "Fulong",
+        "poj": "Hok-liông",
+        "cx": 208,
+        "cy": 85,
+        "dist": 29,
+        "stamp": "🏖️",
+        "line": "TRA",
+        "isMain": false,
+        "audioId": "20761(1)"
+    },
+    {
+        "id": "yilan",
+        "nameZH": "宜蘭",
+        "nameEN": "Yilan",
+        "poj": "Gî-lân",
+        "cx": 200,
+        "cy": 105,
+        "dist": 60,
+        "stamp": "🥣",
+        "line": "TRA",
+        "isMain": true
+    },
+    {
+        "id": "tra-suao",
+        "nameZH": "蘇澳",
+        "nameEN": "Su'ao",
+        "poj": "So-ò",
+        "cx": 201,
+        "cy": 125,
+        "dist": 75,
+        "stamp": "⚓",
+        "line": "TRA",
+        "isMain": false,
+        "audioId": "20777(1)"
+    },
+    {
+        "id": "tra-dongao",
+        "nameZH": "東澳",
+        "nameEN": "Dong'ao",
+        "poj": "Tang-ò",
+        "cx": 202,
+        "cy": 155,
+        "dist": 95,
+        "stamp": "🌊",
+        "line": "TRA",
+        "isMain": false,
+        "audioId": "20780(1)"
+    },
+    {
+        "id": "tra-hsincheng",
+        "nameZH": "新城",
+        "nameEN": "Hsincheng",
+        "poj": "Sin-siâⁿ",
+        "cx": 204,
+        "cy": 190,
+        "dist": 120,
+        "stamp": "🌺",
+        "line": "TRA",
+        "isMain": false,
+        "audioId": "20787(1)"
+    },
+    {
+        "id": "hualien",
+        "nameZH": "花蓮",
+        "nameEN": "Hualien",
+        "poj": "Hua-liân",
+        "cx": 205,
+        "cy": 220,
+        "dist": 140,
+        "stamp": "⛰️",
+        "line": "TRA",
+        "isMain": true
+    },
+    {
+        "id": "tra-jian",
+        "nameZH": "吉安",
+        "nameEN": "Ji'an",
+        "poj": "Kiat-an",
+        "cx": 204,
+        "cy": 226,
+        "dist": 148,
+        "stamp": "🌾",
+        "line": "TRA",
+        "isMain": false,
+        "audioId": "20791(1)"
+    },
+    {
+        "id": "tra-shoufeng",
+        "nameZH": "壽豐",
+        "nameEN": "Shoufeng",
+        "poj": "Siū-hong",
+        "cx": 203,
+        "cy": 235,
+        "dist": 158,
+        "stamp": "🌿",
+        "line": "TRA",
+        "isMain": false,
+        "audioId": "20794(1)"
+    },
+    {
+        "id": "tra-fuyuan",
+        "nameZH": "富源",
+        "nameEN": "Fuyuan",
+        "poj": "Hù-gôan",
+        "cx": 202,
+        "cy": 245,
+        "dist": 172,
+        "stamp": "🌊",
+        "line": "TRA",
+        "isMain": false,
+        "audioId": "20801(1)"
+    },
+    {
+        "id": "tra-yuli",
+        "nameZH": "玉里",
+        "nameEN": "Yuli",
+        "poj": "Gio̍k-lí",
+        "cx": 200,
+        "cy": 260,
+        "dist": 190,
+        "stamp": "💎",
+        "line": "TRA",
+        "isMain": false,
+        "audioId": "20805(1)"
+    },
+    {
+        "id": "tra-fuli",
+        "nameZH": "富里",
+        "nameEN": "Fuli",
+        "poj": "Hù-lí",
+        "cx": 196,
+        "cy": 280,
+        "dist": 210,
+        "stamp": "🌾",
+        "line": "TRA",
+        "isMain": false,
+        "audioId": "20809(1)"
+    },
+    {
+        "id": "tra-chishang",
+        "nameZH": "池上",
+        "nameEN": "Chishang",
+        "poj": "Tî-siōng",
+        "cx": 193,
+        "cy": 300,
+        "dist": 225,
+        "stamp": "🍱",
+        "line": "TRA",
+        "isMain": false,
+        "audioId": "20810(1)"
+    },
+    {
+        "id": "tra-guanshan",
+        "nameZH": "關山",
+        "nameEN": "Guanshan",
+        "poj": "Kuan-san",
+        "cx": 189,
+        "cy": 320,
+        "dist": 245,
+        "stamp": "🌄",
+        "line": "TRA",
+        "isMain": false,
+        "audioId": "20812(1)"
+    },
+    {
+        "id": "tra-luye",
+        "nameZH": "鹿野",
+        "nameEN": "Luye",
+        "poj": "Lo̍k-iá",
+        "cx": 185,
+        "cy": 340,
+        "dist": 265,
+        "stamp": "🦌",
+        "line": "TRA",
+        "isMain": false,
+        "audioId": "20816(1)"
+    },
+    {
+        "id": "taitung",
+        "nameZH": "台東",
+        "nameEN": "Taitung",
+        "poj": "Tâi-tang",
+        "cx": 180,
+        "cy": 360,
+        "dist": 290,
+        "stamp": "🎈",
+        "line": "TRA",
+        "isMain": true
+    },
+    {
+        "id": "tra-zhiben",
+        "nameZH": "知本",
+        "nameEN": "Jhiben",
+        "poj": "Ti-pún",
+        "cx": 168,
+        "cy": 395,
+        "dist": 310,
+        "stamp": "♨️",
+        "line": "TRA",
+        "isMain": false,
+        "audioId": "20830(1)"
+    },
+    {
+        "id": "tra-dawu",
+        "nameZH": "大武",
+        "nameEN": "Dawu",
+        "poj": "Tāi-bú",
+        "cx": 145,
+        "cy": 435,
+        "dist": 350,
+        "stamp": "⛰️",
+        "line": "TRA",
+        "isMain": false,
+        "audioId": "20825(1)"
+    },
+    {
+        "id": "pingtung",
+        "nameZH": "屏東",
+        "nameEN": "屏東",
+        "poj": "Pîn-tong",
+        "cx": 98,
+        "cy": 438,
+        "dist": 450,
+        "stamp": "🍍",
+        "line": "TRA",
+        "isMain": true
+    },
+    {
+        "id": "tra-linbian",
+        "nameZH": "林邊",
+        "nameEN": "Linbian",
+        "poj": "Nâ-pinn",
+        "cx": 112,
+        "cy": 455,
+        "dist": 462,
+        "stamp": "🌿",
+        "line": "TRA",
+        "isMain": false,
+        "audioId": "20740(1)"
+    },
+    {
+        "id": "tra-donggang",
+        "nameZH": "東港",
+        "nameEN": "Donggang",
+        "poj": "Tang-káng",
+        "cx": 116,
+        "cy": 465,
+        "dist": 470,
+        "stamp": "🚢",
+        "line": "TRA",
+        "isMain": false
+    },
+    {
+        "id": "tra-renwu",
+        "nameZH": "仁武",
+        "nameEN": "Renwu",
+        "poj": "Jîn-bú",
+        "cx": 84,
+        "cy": 412,
+        "dist": 485,
+        "stamp": "🏘️",
+        "line": "TRA",
+        "isMain": false
+    },
+    {
+        "id": "tra-fengshan",
+        "nameZH": "鳳山",
+        "nameEN": "Fengshan",
+        "poj": "Hōng-san",
+        "cx": 91,
+        "cy": 425,
+        "dist": 495,
+        "stamp": "⛩️",
+        "line": "TRA",
+        "isMain": false,
+        "audioId": "20727(1)"
+    },
+    {
+        "id": "kaohsiung",
+        "nameZH": "高雄",
+        "nameEN": "Kaohsiung",
+        "poj": "Ko-hiông",
+        "cx": 78,
+        "cy": 400,
+        "dist": 510,
+        "stamp": "🚢",
+        "line": "TRA",
+        "isMain": true
+    },
+    {
+        "id": "tra-zuoying",
+        "nameZH": "左營",
+        "nameEN": "Zuoying",
+        "poj": "Chó-iâⁿ",
+        "cx": 76,
+        "cy": 394,
+        "dist": 518,
+        "stamp": "⚓",
+        "line": "TRA",
+        "isMain": false,
+        "transferId": "zuoying",
+        "audioId": "20704(1)"
+    },
+    {
+        "id": "tra-nanzih",
+        "nameZH": "楠梓",
+        "nameEN": "Nanzih",
+        "poj": "Lâm-chú",
+        "cx": 74,
+        "cy": 388,
+        "dist": 524,
+        "stamp": "🌳",
+        "line": "TRA",
+        "isMain": false,
+        "audioId": "20703(1)"
+    },
+    {
+        "id": "tra-gangshan",
+        "nameZH": "岡山",
+        "nameEN": "Gangshan",
+        "poj": "Kong-san",
+        "cx": 71,
+        "cy": 379,
+        "dist": 532,
+        "stamp": "🌾",
+        "line": "TRA",
+        "isMain": false,
+        "audioId": "20701(1)"
+    },
+    {
+        "id": "tra-dahu",
+        "nameZH": "大湖",
+        "nameEN": "Dahu",
+        "poj": "Tāi-ôo",
+        "cx": 68,
+        "cy": 370,
+        "dist": 540,
+        "stamp": "🌊",
+        "line": "TRA",
+        "isMain": false,
+        "audioId": "20699(1)"
+    },
+    {
+        "id": "tainan",
+        "nameZH": "台南",
+        "nameEN": "Tainan",
+        "poj": "Tâi-lâm",
+        "cx": 65,
+        "cy": 350,
+        "dist": 558,
+        "stamp": "🏯",
+        "line": "TRA",
+        "isMain": true
+    },
+    {
+        "id": "tra-shalun",
+        "nameZH": "沙崙",
+        "nameEN": "Shalun",
+        "poj": "Sua-lūn",
+        "cx": 66,
+        "cy": 360,
+        "dist": 566,
+        "stamp": "🏞️",
+        "line": "TRA",
+        "isMain": false,
+        "transferId": "tainan",
+        "audioId": "331(4)"
+    },
+    {
+        "id": "tra-yongkang",
+        "nameZH": "永康",
+        "nameEN": "Yongkang",
+        "poj": "Íng-khong",
+        "cx": 65,
+        "cy": 343,
+        "dist": 574,
+        "stamp": "🌆",
+        "line": "TRA",
+        "isMain": false,
+        "audioId": "20695(1)"
+    },
+    {
+        "id": "tra-xinshi",
+        "nameZH": "新市",
+        "nameEN": "Xinshi",
+        "poj": "Sin-tshī",
+        "cx": 66,
+        "cy": 336,
+        "dist": 582,
+        "stamp": "🏙️",
+        "line": "TRA",
+        "isMain": false,
+        "audioId": "20694(1)"
+    },
+    {
+        "id": "tra-shanhua",
+        "nameZH": "善化",
+        "nameEN": "善化",
+        "poj": "Siān-hoà",
+        "cx": 67,
+        "cy": 328,
+        "dist": 590,
+        "stamp": "🏯",
+        "line": "TRA",
+        "isMain": false,
+        "audioId": "20693(1)"
+    },
+    {
+        "id": "tra-liuying",
+        "nameZH": "柳營",
+        "nameEN": "Liuying",
+        "poj": "Liú-iâⁿ",
+        "cx": 68,
+        "cy": 318,
+        "dist": 598,
+        "stamp": "🌿",
+        "line": "TRA",
+        "isMain": false,
+        "audioId": "20689(1)"
+    },
+    {
+        "id": "tra-xinying",
+        "nameZH": "新營",
+        "nameEN": "Xinying",
+        "poj": "Sin-iâⁿ",
+        "cx": 69,
+        "cy": 308,
+        "dist": 608,
+        "stamp": "⛩️",
+        "line": "TRA",
+        "isMain": false,
+        "audioId": "20688(1)"
+    },
+    {
+        "id": "chiayi",
+        "nameZH": "嘉義",
+        "nameEN": "Chiayi",
+        "poj": "Ka-gī",
+        "cx": 70,
+        "cy": 295,
+        "dist": 620,
+        "stamp": "🪵",
+        "line": "TRA",
+        "isMain": true
+    },
+    {
+        "id": "tra-dounan",
+        "nameZH": "斗南",
+        "nameEN": "Dounan",
+        "poj": "Táu-lâm",
+        "cx": 70,
+        "cy": 288,
+        "dist": 630,
+        "stamp": "🌽",
+        "line": "TRA",
+        "isMain": false,
+        "audioId": "20680(1)"
+    },
+    {
+        "id": "tra-douliu",
+        "nameZH": "斗六",
+        "nameEN": "Douliu",
+        "poj": "Táu-la̍k",
+        "cx": 71,
+        "cy": 282,
+        "dist": 640,
+        "stamp": "🏙️",
+        "line": "TRA",
+        "isMain": false,
+        "audioId": "20679(1)"
+    },
+    {
+        "id": "tra-linnei",
+        "nameZH": "林內",
+        "nameEN": "Linnei",
+        "poj": "Nâ-lāi",
+        "cx": 71,
+        "cy": 276,
+        "dist": 650,
+        "stamp": "🌿",
+        "line": "TRA",
+        "isMain": false,
+        "audioId": "20677(1)"
+    },
+    {
+        "id": "tra-ershui",
+        "nameZH": "二水",
+        "nameEN": "Ershui",
+        "poj": "Jī-tsuí",
+        "cx": 72,
+        "cy": 268,
+        "dist": 658,
+        "stamp": "🌊",
+        "line": "TRA",
+        "isMain": false,
+        "audioId": "20676(1)"
+    },
+    {
+        "id": "tra-tianzhong",
+        "nameZH": "田中",
+        "nameEN": "Tianzhong",
+        "poj": "Tshân-tiong",
+        "cx": 73,
+        "cy": 262,
+        "dist": 666,
+        "stamp": "🌾",
+        "line": "TRA",
+        "isMain": false,
+        "audioId": "20675(1)"
+    },
+    {
+        "id": "tra-yuanlin",
+        "nameZH": "員林",
+        "nameEN": "Yuanlin",
+        "poj": "Uân-lîm",
+        "cx": 74,
+        "cy": 250,
+        "dist": 678,
+        "stamp": "🌳",
+        "line": "TRA",
+        "isMain": false,
+        "audioId": "20672(1)"
+    },
+    {
+        "id": "changhua",
+        "nameZH": "彰化",
+        "nameEN": "Changhua",
+        "poj": "Chiong-hoà",
+        "cx": 75,
+        "cy": 235,
+        "dist": 690,
+        "stamp": "🪷",
+        "line": "TRA",
+        "isMain": true
+    },
+    {
+        "id": "tra-wuri",
+        "nameZH": "烏日",
+        "nameEN": "Wuri",
+        "poj": "O͘-ji̍t",
+        "cx": 79,
+        "cy": 218,
+        "dist": 698,
+        "stamp": "🌞",
+        "line": "TRA",
+        "isMain": false,
+        "transferId": "taichung",
+        "audioId": "20668(1)"
+    },
+    {
+        "id": "tra-daqing",
+        "nameZH": "大慶",
+        "nameEN": "Daqing",
+        "poj": "Tāi-khìng",
+        "cx": 82,
+        "cy": 208,
+        "dist": 704,
+        "stamp": "🏙️",
+        "line": "TRA",
+        "isMain": false,
+        "audioId": "20667(1)"
+    },
+    {
+        "id": "taichung",
+        "nameZH": "台中",
+        "nameEN": "Taichung",
+        "poj": "Tâi-tiong",
+        "cx": 85,
+        "cy": 200,
+        "dist": 712,
+        "stamp": "⛲",
+        "line": "TRA",
+        "isMain": true
+    },
+    {
+        "id": "tra-fengyuan",
+        "nameZH": "豐原",
+        "nameEN": "豐原",
+        "poj": "Hong-gôan",
+        "cx": 83,
+        "cy": 188,
+        "dist": 722,
+        "stamp": "🍑",
+        "line": "TRA",
+        "isMain": false,
+        "audioId": "20664(1)"
+    },
+    {
+        "id": "tra-sanyi",
+        "nameZH": "三義",
+        "nameEN": "Sanyi",
+        "poj": "Sam-gī",
+        "cx": 82,
+        "cy": 175,
+        "dist": 732,
+        "stamp": "🌲",
+        "line": "TRA",
+        "isMain": false,
+        "audioId": "20661(1)"
+    },
+    {
+        "id": "tra-tongluo",
+        "nameZH": "銅鑼",
+        "nameEN": "Tongluo",
+        "poj": "Tâng-lô",
+        "cx": 81,
+        "cy": 162,
+        "dist": 742,
+        "stamp": "🔔",
+        "line": "TRA",
+        "isMain": false,
+        "audioId": "2381(2)"
+    },
+    {
+        "id": "miaoli",
+        "nameZH": "苗栗",
+        "nameEN": "苗栗",
+        "poj": "Biâu-le̍k",
+        "cx": 80,
+        "cy": 150,
+        "dist": 752,
+        "stamp": "🍓",
+        "line": "TRA",
+        "isMain": true
+    },
+    {
+        "id": "tra-toufen",
+        "nameZH": "頭份",
+        "nameEN": "Toufen",
+        "poj": "Thâu-hūn",
+        "cx": 84,
+        "cy": 138,
+        "dist": 762,
+        "stamp": "🏔️",
+        "line": "TRA",
+        "isMain": false
+    },
+    {
+        "id": "tra-chunan",
+        "nameZH": "竹南",
+        "nameEN": "竹南",
+        "poj": "Tek-lâm",
+        "cx": 86,
+        "cy": 128,
+        "dist": 772,
+        "stamp": "🎋",
+        "line": "TRA",
+        "isMain": false,
+        "audioId": "20655(1)"
+    },
+    {
+        "id": "tra-liujia",
+        "nameZH": "六家",
+        "nameEN": "Liujia",
+        "poj": "La̍k-ke",
+        "cx": 91,
+        "cy": 118,
+        "dist": 782,
+        "stamp": "🏡",
+        "line": "TRA",
+        "isMain": false,
+        "transferId": "hsinchu",
+        "audioId": "28089(1)"
+    },
+    {
+        "id": "hsinchu",
+        "nameZH": "新竹",
+        "nameEN": "Hsinchu",
+        "poj": "Sin-tek",
+        "cx": 95,
+        "cy": 110,
+        "dist": 792,
+        "stamp": "🔬",
+        "line": "TRA",
+        "isMain": true
+    },
+    {
+        "id": "tra-zhubei",
+        "nameZH": "竹北",
+        "nameEN": "Zhubei",
+        "poj": "Tek-pak",
+        "cx": 102,
+        "cy": 105,
+        "dist": 800,
+        "stamp": "🏙️",
+        "line": "TRA",
+        "isMain": false,
+        "audioId": "20651(1)"
+    },
+    {
+        "id": "tra-hukou",
+        "nameZH": "湖口",
+        "nameEN": "湖口",
+        "poj": "Ôo-kháu",
+        "cx": 108,
+        "cy": 100,
+        "dist": 808,
+        "stamp": "🏭",
+        "line": "TRA",
+        "isMain": false,
+        "audioId": "20649(1)"
+    },
+    {
+        "id": "tra-yangmei",
+        "nameZH": "楊梅",
+        "nameEN": "楊梅",
+        "poj": "Iûⁿ-mn̂g",
+        "cx": 115,
+        "cy": 94,
+        "dist": 818,
+        "stamp": "🍑",
+        "line": "TRA",
+        "isMain": false,
+        "audioId": "20647(1)"
+    },
+    {
+        "id": "tra-zhongli",
+        "nameZH": "中壢",
+        "nameEN": "中壢",
+        "poj": "Tiong-le̍k",
+        "cx": 122,
+        "cy": 88,
+        "dist": 828,
+        "stamp": "🌆",
+        "line": "TRA",
+        "isMain": false,
+        "audioId": "20645(1)"
+    },
+    {
+        "id": "taoyuan",
+        "nameZH": "桃園",
+        "nameEN": "Taoyuan",
+        "poj": "Thô-hn̂g",
+        "cx": 130,
+        "cy": 82,
+        "dist": 838,
+        "stamp": "✈️",
+        "line": "TRA",
+        "isMain": true,
+        "transferId": "taoyuan"
+    },
+    {
+        "id": "tra-yingge",
+        "nameZH": "鶯歌",
+        "nameEN": "鶯歌",
+        "poj": "Ing-ko",
+        "cx": 138,
+        "cy": 79,
+        "dist": 846,
+        "stamp": "🏺",
+        "line": "TRA",
+        "isMain": false,
+        "audioId": "20642(1)"
+    },
+    {
+        "id": "tra-sanxia",
+        "nameZH": "三峽",
+        "nameEN": "三峽",
+        "poj": "Sam-kiap",
+        "cx": 134,
+        "cy": 80,
+        "dist": 850,
+        "stamp": "🏘️",
+        "line": "TRA",
+        "isMain": false
+    },
+    {
+        "id": "tra-banqiao",
+        "nameZH": "板橋",
+        "nameEN": "板橋",
+        "poj": "Pang-kiô",
+        "cx": 148,
+        "cy": 76,
+        "dist": 856,
+        "stamp": "🌉",
+        "line": "TRA",
+        "isMain": false,
+        "transferId": "banqiao",
+        "audioId": "20639(1)"
+    },
+    {
+        "id": "tra-wanhua",
+        "nameZH": "萬華",
+        "nameEN": "萬華",
+        "poj": "Bān-huà",
+        "cx": 155,
+        "cy": 72,
+        "dist": 862,
+        "stamp": "🏮",
+        "line": "TRA",
+        "isMain": false,
+        "audioId": "20638(1)"
+    },
+    {
+        "id": "taipei",
+        "nameZH": "台北",
+        "nameEN": "台北",
+        "poj": "Tâi-pak",
+        "cx": 165,
+        "cy": 68,
+        "dist": 866,
+        "stamp": "🏢",
+        "line": "TRA",
+        "isMain": true,
+        "transferId": "taipei"
+    },
+    {
+        "id": "tra-qingshui",
+        "nameZH": "清水",
+        "nameEN": "清水",
+        "poj": "Tshin-tsuí",
+        "cx": 70,
+        "cy": 180,
+        "dist": 700,
+        "stamp": "💧",
+        "line": "TRA",
+        "isMain": false,
+        "audioId": "752(4)"
+    },
+    {
+        "id": "tra-shalu",
+        "nameZH": "沙鹿",
+        "nameEN": "沙鹿",
+        "poj": "Sua-lo̍k",
+        "cx": 69,
+        "cy": 195,
+        "dist": 704,
+        "stamp": "🏖️",
+        "line": "TRA",
+        "isMain": false,
+        "audioId": "20720(1)"
+    },
+    {
+        "id": "tra-longjing",
+        "nameZH": "龍井",
+        "nameEN": "龍井",
+        "poj": "Liông-tsínn",
+        "cx": 68,
+        "cy": 210,
+        "dist": 708,
+        "stamp": "🐉",
+        "line": "TRA",
+        "isMain": false,
+        "audioId": "20721(1)"
+    },
+    {
+        "id": "hsr-nangang",
+        "nameZH": "南港",
+        "nameEN": "Nangang",
+        "poj": "Lâm-káng",
+        "cx": 220,
+        "cy": 55,
+        "dist": 0,
+        "stamp": "🏙️",
+        "line": "HSR",
+        "isMain": false,
+        "transferId": "nangang",
+        "audioId": "21389(1)"
+    },
+    {
+        "id": "hsr-taipei",
+        "nameZH": "台北",
+        "nameEN": "Taipei",
+        "poj": "Tâi-pak",
+        "cx": 172,
+        "cy": 62,
+        "dist": 9,
+        "stamp": "🏢",
+        "line": "HSR",
+        "isMain": false,
+        "transferId": "taipei",
+        "audioId": "20637(1)"
+    },
+    {
+        "id": "hsr-banqiao",
+        "nameZH": "板橋",
+        "nameEN": "Banqiao",
+        "poj": "Pang-kiô",
+        "cx": 154,
+        "cy": 70,
+        "dist": 16,
+        "stamp": "🌉",
+        "line": "HSR",
+        "isMain": false,
+        "transferId": "banqiao",
+        "audioId": "20639(1)"
+    },
+    {
+        "id": "hsr-taoyuan",
+        "nameZH": "桃園",
+        "nameEN": "Taoyuan",
+        "poj": "Thô-hn̂g",
+        "cx": 122,
+        "cy": 78,
+        "dist": 36,
+        "stamp": "✈️",
+        "line": "HSR",
+        "isMain": false,
+        "transferId": "taoyuan",
+        "audioId": "20643(1)"
+    },
+    {
+        "id": "hsr-hsinchu",
+        "nameZH": "新竹",
+        "nameEN": "Hsinchu",
+        "poj": "Sin-tek",
+        "cx": 90,
+        "cy": 104,
+        "dist": 64,
+        "stamp": "🔬",
+        "line": "HSR",
+        "isMain": false,
+        "transferId": "hsinchu",
+        "audioId": "20652(1)"
+    },
+    {
+        "id": "hsr-miaoli",
+        "nameZH": "苗栗",
+        "nameEN": "Miaoli",
+        "poj": "Biâu-le̍k",
+        "cx": 72,
+        "cy": 144,
+        "dist": 95,
+        "stamp": "🍓",
+        "line": "HSR",
+        "isMain": false,
+        "audioId": "20658(1)"
+    },
+    {
+        "id": "hsr-taichung",
+        "nameZH": "台中",
+        "nameEN": "Taichung",
+        "poj": "Tâi-tiong",
+        "cx": 78,
+        "cy": 196,
+        "dist": 121,
+        "stamp": "⛲",
+        "line": "HSR",
+        "isMain": false,
+        "transferId": "taichung",
+        "audioId": "20666(1)"
+    },
+    {
+        "id": "hsr-changhua",
+        "nameZH": "彰化",
+        "nameEN": "Changhua",
+        "poj": "Chiong-hoà",
+        "cx": 68,
+        "cy": 230,
+        "dist": 141,
+        "stamp": "🪷",
+        "line": "HSR",
+        "isMain": false,
+        "audioId": "20670(1)"
+    },
+    {
+        "id": "hsr-yunlin",
+        "nameZH": "雲林",
+        "nameEN": "Yunlin",
+        "poj": "Hûn-lîm",
+        "cx": 62,
+        "cy": 265,
+        "dist": 168,
+        "stamp": "☁️",
+        "line": "HSR",
+        "isMain": false
+    },
+    {
+        "id": "hsr-chiayi",
+        "nameZH": "嘉義",
+        "nameEN": "Chiayi",
+        "poj": "Ka-gī",
+        "cx": 60,
+        "cy": 295,
+        "dist": 200,
+        "stamp": "🪵",
+        "line": "HSR",
+        "isMain": false,
+        "audioId": "20684(1)"
+    },
+    {
+        "id": "hsr-tainan",
+        "nameZH": "台南",
+        "nameEN": "Tainan",
+        "poj": "Tâi-lâm",
+        "cx": 56,
+        "cy": 345,
+        "dist": 260,
+        "stamp": "🏯",
+        "line": "HSR",
+        "isMain": false,
+        "transferId": "tainan",
+        "audioId": "20696(1)"
+    },
+    {
+        "id": "hsr-zuoying",
+        "nameZH": "左營",
+        "nameEN": "Zuoying (HSR)",
+        "poj": "Chó-iâⁿ",
+        "cx": 66,
+        "cy": 395,
+        "dist": 311,
+        "stamp": "🚄",
+        "line": "HSR",
+        "isMain": false,
+        "transferId": "zuoying",
+        "audioId": "20704(1)"
+    }
 ];
+
+// ==========================================
+// 1b. 台鐵各小站資料庫 (TRA Small Stations)
+// ==========================================
+const traSmallStations = [];
+
+// ==========================================
+// 1c. 高鐵車站資料庫 (Taiwan HSR Stations)
+// ==========================================
+const hsrStations = [];
 
 const totalCircumference = 870; // 宜蘭到基隆 60km，總長 870km
 
@@ -1754,7 +2907,24 @@ const twHomophones = {
     "十分": "雜昏", "十五分": "雜奧昏", "二十分": "吉雜昏", "三分": "三雜昏",
     "四十分": "細雜昏", "四十五分": "細雜奧昏", "五十分": "奧雜昏",
     // 答題反饋
-    "著矣": "丟啊", "毋著喔": "嗯丟喔", "答對了": "丟啊", "答錯了": "嗯丟喔"
+    "著矣": "丟啊", "毋著喔": "嗯丟喔", "答對了": "丟啊", "答錯了": "嗯丟喔",
+    // 台鐵小站 (TRA Small Stations) 同音字近似
+    "八堵": "北ㄉㄟ", "暖暖": "軟軟", "瑞芳": "誰紅", "雙溪": "霜溪",
+    "福隆": "福龍", "萬華": "万花", "板橋": "半橋", "鶯歌": "英科",
+    "三峽": "三峽", "中壢": "中力", "楊梅": "央每", "湖口": "虎口",
+    "竹北": "竹北", "六家": "辣嘎", "竹南": "竹南", "頭份": "頭份",
+    "銅鑼": "同羅", "三義": "三義", "豐原": "風原", "清水": "清水",
+    "沙鹿": "沙鹿", "龍井": "龍井", "大慶": "大慶", "烏日": "烏日",
+    "員林": "員林", "田中": "田中", "二水": "吉水", "林內": "林內",
+    "斗六": "斗六", "斗南": "斗南", "新營": "新營", "柳營": "柳營",
+    "沙崙": "沙崙", "永康": "永康", "新市": "新市", "善化": "善化",
+    "楠梓": "藍子", "岡山": "港山", "仁武": "因無", "鳳山": "紅山",
+    "大湖": "大湖", "林邊": "林邊", "東港": "東港",
+    "蘇澳": "蘇澳", "東澳": "東澳", "新城": "新城", "吉安": "吉安",
+    "壽豐": "壽豐", "富源": "富源", "玉里": "玉里", "富里": "富里",
+    "池上": "池上", "關山": "關山", "鹿野": "鹿野", "知本": "知本", "大武": "大武",
+    // 高鐵站 (HSR Stations)
+    "南港": "藍港", "板橋": "半橋", "雲林": "雲林", "左營": "左營"
 };
 
 // ==========================================
@@ -1833,20 +3003,43 @@ let voiceEngineMode = "google"; // "google" or "local"
 // 6. 初始化 (On Load)
 // ==========================================
 window.onload = () => {
-    // 載入 localStorage 設定
+    // 動態將台鐵小站與高鐵站加入詞彙庫
+    stations.forEach(s => {
+        if (s.line === "TRA" && !s.isMain) {
+            vocabData.push({
+                zh: s.nameZH,
+                tw: s.audioId || s.poj,
+                en: s.nameEN + " (TRA)",
+                emoji: s.stamp + " " + s.id,
+                type: "tra-station",
+                id: s.id
+            });
+        } else if (s.line === "HSR") {
+            vocabData.push({
+                zh: s.nameZH,
+                tw: s.audioId || s.poj,
+                en: s.nameEN + " (HSR)",
+                emoji: s.stamp + " " + s.id,
+                type: "hsr-station",
+                id: s.id
+            });
+        }
+    });
+
     if (localStorage.getItem("app_lang")) {
         currentLang = localStorage.getItem("app_lang");
     }
     if (localStorage.getItem("app_theme") === "dark") {
         document.documentElement.setAttribute("data-theme", "dark");
-        document.querySelector("#theme-toggle-btn i").className = "fa-solid fa-sun";
+        const icon = document.querySelector("#theme-toggle-btn i");
+        if (icon) icon.className = "fa-solid fa-sun";
     }
     if (localStorage.getItem("app_speech_rate")) {
         speechRate = parseFloat(localStorage.getItem("app_speech_rate"));
         const rateSlider = document.getElementById("speech-rate");
         if (rateSlider) {
             rateSlider.value = speechRate;
-            document.getElementById("speech-rate-label").textContent = `${speechRate.toFixed(1)}x`;
+            document.getElementById("speech-rate-label").textContent = speechRate.toFixed(1) + "x";
         }
     }
 
@@ -1857,16 +3050,10 @@ window.onload = () => {
     updateClockHands();
     updateClockReadout();
     updateUI();
-    
-    // 初始化路程計算
     calculateJourney();
-    
-    // 設置時鐘拖動事件 (Pointer Events)
     setupClockDragging();
-    
-    // 動態綁定所有交互事件（解決 WordPress/Blogger 等平台的屬性過濾問題）
     bindDynamicEvents();
-};
+};;
 
 // ==========================================
 // 7. 介面渲染與操作
@@ -1874,25 +3061,46 @@ window.onload = () => {
 function populateDropdowns() {
     const startSelect = document.getElementById("start-station");
     const endSelect = document.getElementById("end-station");
+    if (!startSelect || !endSelect) return;
     
     startSelect.innerHTML = "";
     endSelect.innerHTML = "";
-
-    stations.forEach((station, idx) => {
-        let opt1 = document.createElement("option");
-        let opt2 = document.createElement("option");
-        opt1.value = opt2.value = station.id;
+    
+    const mainTRA = stations.filter(s => s.line === "TRA" && s.isMain);
+    const smallTRA = stations.filter(s => s.line === "TRA" && !s.isMain);
+    const hsr = stations.filter(s => s.line === "HSR");
+    
+    const groups = [
+        { labelZH: "台鐵主要車站", labelEN: "TRA Main Stations", list: mainTRA },
+        { labelZH: "台鐵沿線小站", labelEN: "TRA Small Stations", list: smallTRA },
+        { labelZH: "高鐵車站", labelEN: "HSR Stations", list: hsr }
+    ];
+    
+    groups.forEach(g => {
+        const groupStart = document.createElement("optgroup");
+        const groupEnd = document.createElement("optgroup");
         
-        const label = `${station.nameZH} (${station.poj} / ${station.nameEN})`;
-        opt1.textContent = opt2.textContent = label;
+        groupStart.label = currentLang === "ZH" ? g.labelZH : g.labelEN;
+        groupEnd.label = currentLang === "ZH" ? g.labelZH : g.labelEN;
         
-        startSelect.appendChild(opt1);
-        endSelect.appendChild(opt2);
+        g.list.forEach(station => {
+            const opt1 = document.createElement("option");
+            const opt2 = document.createElement("option");
+            opt1.value = opt2.value = station.id;
+            
+            const label = station.nameZH + " (" + station.poj + " / &nbsp;" + station.nameEN + ")";
+            opt1.innerHTML = opt2.innerHTML = label;
+            
+            groupStart.appendChild(opt1);
+            groupEnd.appendChild(opt2);
+        });
+        
+        startSelect.appendChild(groupStart);
+        endSelect.appendChild(groupEnd);
     });
     
-    // 預設起點：台北，終點：高雄
-    startSelect.selectedIndex = 1; // Taipei
-    endSelect.selectedIndex = 9;   // Kaohsiung
+    startSelect.value = "taipei";
+    endSelect.value = "kaohsiung";
 }
 
 // 渲染環島鐵路地圖 SVG
@@ -1900,40 +3108,59 @@ function renderTaiwanMap() {
     const railTrack = document.getElementById("svg-rail-track");
     const railTrackDashed = document.getElementById("svg-rail-track-dashed");
     const stationsGroup = document.getElementById("svg-stations-group");
+    if (!railTrack || !stationsGroup) return;
     
-    // 產生環島鐵路軌道路徑 (閉合環線 SVG Path)
-    let dPath = `M ${stations[0].cx} ${stations[0].cy}`;
-    for (let i = 1; i < stations.length; i++) {
-        dPath += ` L ${stations[i].cx} ${stations[i].cy}`;
+    const stationsTRA = stations.filter(s => s.line === "TRA");
+    const stationsHSR = stations.filter(s => s.line === "HSR");
+    
+    // Draw TRA circular loop
+    let dPath = "M " + stationsTRA[0].cx + " " + stationsTRA[0].cy;
+    for (let i = 1; i < stationsTRA.length; i++) {
+        dPath += " L " + stationsTRA[i].cx + " " + stationsTRA[i].cy;
     }
-    dPath += " Z"; // 閉合回基隆
+    dPath += " Z";
+    
+    // Draw HSR linear track
+    if (stationsHSR.length > 0) {
+        dPath += " M " + stationsHSR[0].cx + " " + stationsHSR[0].cy;
+        for (let i = 1; i < stationsHSR.length; i++) {
+            dPath += " L " + stationsHSR[i].cx + " " + stationsHSR[i].cy;
+        }
+    }
     
     railTrack.setAttribute("d", dPath);
-    railTrackDashed.setAttribute("d", dPath);
+    if (railTrackDashed) railTrackDashed.setAttribute("d", dPath);
     
-    // 清空站點 DOM 並重繪
     stationsGroup.innerHTML = "";
     stations.forEach(st => {
         const group = document.createElementNS("http://www.w3.org/2000/svg", "g");
-        group.setAttribute("class", "station-point");
-        group.setAttribute("id", `svg-node-${st.id}`);
+        group.setAttribute("class", "station-point " + (st.line === "HSR" ? "hsr-node" : "tra-node"));
+        group.setAttribute("id", "svg-node-" + st.id);
         group.onclick = () => {
-            // 點選地圖站點直接播放該城市台語發音 (傳入 POJ 使其唸出完美台語)
-            playTaigiTTS(st.nameZH, st.poj);
+            playTaigiTTS(st.nameZH, st.audioId || st.poj);
             highlightNode(st.id);
         };
         
-        // 畫小圓點
         const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
         circle.setAttribute("cx", st.cx);
         circle.setAttribute("cy", st.cy);
-        circle.setAttribute("r", "6");
+        circle.setAttribute("r", st.isMain ? "6" : "4.5");
+        if (st.line === "HSR") {
+            circle.style.stroke = "#6C5CE7";
+        } else {
+            circle.style.stroke = "#0984E3";
+        }
         
-        // 標記站名
         const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
         text.setAttribute("x", st.cx + (st.cx > 150 ? 12 : -12));
         text.setAttribute("y", st.cy + 4);
         text.setAttribute("text-anchor", st.cx > 150 ? "start" : "end");
+        
+        // Hide small stations labels by default to prevent map cluttering
+        if (!st.isMain && st.line !== "HSR") {
+            text.style.display = "none";
+        }
+        
         text.textContent = st.nameZH;
         
         group.appendChild(circle);
@@ -1960,10 +3187,17 @@ function renderVocabWall() {
         const card = document.createElement("div");
         card.className = "vocab-card";
         card.setAttribute("data-type", item.type);
-        card.onclick = () => playTaigiTTS(item.zh, item.tw);
+        // 依據 type 決定標籤色彩 class
+        if (item.type === "tra-station") card.classList.add("card-tra");
+        if (item.type === "hsr-station") card.classList.add("card-hsr");
+        card.onclick = () => playTaigiTTS(item.zh.replace(/（.*）$|\(.*\)$/, ''), item.tw);
+        
+        // emoji: station items store "stamp id", vocab items store " emoji"
+        const emojiParts = item.emoji.split(' ');
+        const displayEmoji = emojiParts[0] || emojiParts[1] || '🚉';
         
         card.innerHTML = `
-            <span class="vocab-emoji">${item.emoji.split(' ')[1]}</span>
+            <span class="vocab-emoji">${displayEmoji}</span>
             <div class="vocab-zh">${item.zh}</div>
             <div class="vocab-pinyin">${item.tw}</div>
             <div class="vocab-en">${item.en}</div>
@@ -1975,11 +3209,12 @@ function renderVocabWall() {
 function filterVocab(type) {
     document.querySelectorAll(".filter-btn").forEach(btn => btn.classList.remove("active"));
     
+    const btnEl = document.getElementById(`btn-filter-${type}`);
+    if (btnEl) btnEl.classList.add("active");
+    
     if (type === 'all') {
-        document.getElementById("btn-filter-all").classList.add("active");
         document.querySelectorAll(".vocab-card").forEach(card => card.style.display = "block");
     } else {
-        document.getElementById(`btn-filter-${type}`).classList.add("active");
         document.querySelectorAll(".vocab-card").forEach(card => {
             if (card.getAttribute("data-type") === type) {
                 card.style.display = "block";
@@ -2007,24 +3242,17 @@ function calculateJourney() {
     const startId = document.getElementById("start-station").value;
     const endId = document.getElementById("end-station").value;
     
-    const startIndex = stations.findIndex(s => s.id === startId);
-    const endIndex = stations.findIndex(s => s.id === endId);
-    
-    const startStation = stations[startIndex];
-    const endStation = stations[endIndex];
-    
-    // 地圖節點樣式重置
+    // Reset map styles
     stations.forEach(s => {
-        const el = document.getElementById(`svg-node-${s.id}`);
+        const el = document.getElementById("svg-node-" + s.id);
         if (el) el.classList.remove("active", "in-route");
     });
     
-    // 高亮起迄點
-    const startNode = document.getElementById(`svg-node-${startId}`);
-    const endNode = document.getElementById(`svg-node-${endId}`);
+    const startNode = document.getElementById("svg-node-" + startId);
+    const endNode = document.getElementById("svg-node-" + endId);
     if (startNode) startNode.classList.add("active");
     if (endNode) endNode.classList.add("active");
-
+    
     const t = uiStrings[currentLang];
     
     if (startId === endId) {
@@ -2034,99 +3262,111 @@ function calculateJourney() {
         document.getElementById("info-platform").textContent = "-";
         document.getElementById("play-journey-btn").disabled = true;
         document.getElementById("journey-sentence-box").classList.remove("active");
-        
-        // 隱藏火車標誌
         document.getElementById("train-marker").classList.remove("active");
-        
-        // 移除高亮路徑 SVG
         document.getElementById("svg-rail-active-path").setAttribute("d", "");
         return;
     }
     
-    // 計算雙向最短路徑
-    const n = stations.length;
+    const startStation = stations.find(s => s.id === startId);
+    const endStation = stations.find(s => s.id === endId);
     
-    // 1. 順時針 (Clockwise)
-    let cwPath = [];
-    let cwDist = 0;
-    let currIdx = startIndex;
-    while (currIdx !== endIndex) {
-        let nextIdx = (currIdx + 1) % n;
-        let d = (stations[nextIdx].dist - stations[currIdx].dist + totalCircumference) % totalCircumference;
-        cwDist += d;
-        cwPath.push(stations[currIdx]);
-        currIdx = nextIdx;
-    }
-    cwPath.push(stations[endIndex]);
+    const routeInfo = getRoute(startId, endId);
+    const chosenRoute = routeInfo.path;
+    const distance = routeInfo.distance;
     
-    // 2. 逆時針 (Counter-Clockwise)
-    let ccwPath = [];
-    let ccwDist = 0;
-    currIdx = startIndex;
-    while (currIdx !== endIndex) {
-        let prevIdx = (currIdx - 1 + n) % n;
-        let d = (stations[currIdx].dist - stations[prevIdx].dist + totalCircumference) % totalCircumference;
-        ccwDist += d;
-        ccwPath.push(stations[currIdx]);
-        currIdx = prevIdx;
-    }
-    ccwPath.push(stations[endIndex]);
-    
-    let chosenRoute = [];
-    let distance = 0;
-    let dirText = "";
-    
-    if (cwDist <= ccwDist) {
-        chosenRoute = cwPath;
-        distance = cwDist;
-        dirText = t.clockwise;
-    } else {
-        chosenRoute = ccwPath;
-        distance = ccwDist;
-        dirText = t.counterclockwise;
-    }
-    
-    // 高亮中途站點
+    // Highlight route nodes
     for (let i = 1; i < chosenRoute.length - 1; i++) {
-        const midNode = document.getElementById(`svg-node-${chosenRoute[i].id}`);
+        const midNode = document.getElementById("svg-node-" + chosenRoute[i].id);
         if (midNode) midNode.classList.add("in-route");
     }
     
-    // 繪製高亮 SVG 軌道線
-    let activeD = `M ${chosenRoute[0].cx} ${chosenRoute[0].cy}`;
+    // Draw active route path
+    let activeD = "M " + chosenRoute[0].cx + " " + chosenRoute[0].cy;
     for (let i = 1; i < chosenRoute.length; i++) {
-        activeD += ` L ${chosenRoute[i].cx} ${chosenRoute[i].cy}`;
+        activeD += " L " + chosenRoute[i].cx + " " + chosenRoute[i].cy;
     }
     const activePath = document.getElementById("svg-rail-active-path");
-    activePath.setAttribute("d", "");
-    setTimeout(() => {
-        activePath.setAttribute("d", activeD);
-    }, 10);
+    if (activePath) {
+        activePath.setAttribute("d", "");
+        setTimeout(() => {
+            activePath.setAttribute("d", activeD);
+        }, 10);
+    }
     
-    // 模擬計算車資與時間
+    // Fares and duration
+    let cost = 0;
+    let durationMinutes = 0;
     const trainClass = document.getElementById("train-class").value;
-    const rate = trainClass === "express" ? 3.5 : 2.0;
-    const cost = Math.round(distance * rate * passengers);
     
-    const speed = trainClass === "express" ? 1.5 : 1.0;
-    const durationMinutes = Math.round(distance / speed);
+    if (startStation.line === "TRA" && endStation.line === "TRA") {
+        const rate = trainClass === "express" ? 3.5 : 2.0;
+        cost = Math.round(distance * rate * passengers);
+        const speed = trainClass === "express" ? 1.5 : 1.0;
+        durationMinutes = Math.round(distance / speed);
+    } else if (startStation.line === "HSR" && endStation.line === "HSR") {
+        cost = Math.round(distance * 4.5 * passengers);
+        durationMinutes = Math.round(distance / 3.0);
+    } else {
+        // Transfer route
+        const parts = routeInfo.direction.split("|");
+        const transferTId = parts[1];
+        
+        let traDist = 0;
+        let hsrDist = 0;
+        
+        if (startStation.line === "TRA") {
+            const traT = stations.find(s => s.line === "TRA" && s.transferId === transferTId);
+            const hsrT = stations.find(s => s.line === "HSR" && s.transferId === transferTId);
+            traDist = getDistanceBetween(startId, traT.id);
+            hsrDist = getDistanceBetween(hsrT.id, endId);
+        } else {
+            const hsrT = stations.find(s => s.line === "HSR" && s.transferId === transferTId);
+            const traT = stations.find(s => s.line === "TRA" && s.transferId === transferTId);
+            hsrDist = getDistanceBetween(startId, hsrT.id);
+            traDist = getDistanceBetween(traT.id, endId);
+        }
+        
+        const traCost = Math.round(traDist * (trainClass === "express" ? 3.5 : 2.0));
+        const hsrCost = Math.round(hsrDist * 4.5);
+        cost = (traCost + hsrCost) * passengers;
+        
+        const traSpeed = trainClass === "express" ? 1.5 : 1.0;
+        durationMinutes = Math.round(traDist / traSpeed) + Math.round(hsrDist / 3.0) + 15; // 15 mins transfer time
+    }
+    
     const durationHrs = Math.floor(durationMinutes / 60);
     const durationMins = durationMinutes % 60;
     
-    const platformNum = (startIndex % 4) + 1;
+    // Display direction
+    let dirText = t.clockwise;
+    if (routeInfo.direction === "counterclockwise") {
+        dirText = t.counterclockwise;
+    } else if (routeInfo.direction.startsWith("tra-to-hsr") || routeInfo.direction.startsWith("hsr-to-tra")) {
+        const transferTId = routeInfo.direction.split("|")[1];
+        const transSt = stations.find(s => s.transferId === transferTId);
+        dirText = currentLang === "ZH" ? "跨系統轉乘 (於 " + (transSt ? transSt.nameZH : "") + " 轉車)" : "Transfer via " + (transSt ? transSt.nameEN : "");
+    } else if (routeInfo.direction.startsWith("hsr")) {
+        dirText = routeInfo.direction === "hsr-southbound" ? (currentLang === "ZH" ? "高鐵南下 ➡️" : "HSR Southbound ➡️") : (currentLang === "ZH" ? "高鐵北上 ⬅️" : "HSR Northbound ⬅️");
+    }
     
-    // 更新網頁欄位
     document.getElementById("info-direction").textContent = dirText;
-    
     const durationStr = durationHrs > 0 
         ? t.durationFormat.replace("{0}", durationHrs).replace("{1}", durationMins)
         : t.mins.replace("{0}", durationMins);
     document.getElementById("info-duration").textContent = durationStr;
     document.getElementById("info-cost").textContent = t.priceUnit.replace("{0}", cost);
+    
+    // Platform info
+    let platformNum = 1;
+    if (startStation.line === "HSR") {
+        platformNum = startId === "hsr-taipei" ? "B2" : "A/B";
+    } else {
+        const traIdx = stations.filter(s => s.line === "TRA").findIndex(s => s.id === startId);
+        platformNum = (traIdx % 4) + 1;
+    }
     document.getElementById("info-platform").textContent = t.platformNum.replace("{0}", platformNum);
     
     document.getElementById("play-journey-btn").disabled = false;
-    
     animateTrainOnMap(chosenRoute);
 }
 
@@ -2157,6 +3397,92 @@ function animateTrainOnMap(route) {
 let activeQueueAudio = null;
 
 const taigiAudioMap = {
+    // --- Crawled station audio mappings & Character fallbacks ---
+    "八堵": "20751(1)",
+    "暖暖": "20753(1)",
+    "瑞芳": "20755(1)",
+    "雙溪": "20759(1)",
+    "福隆": "20761(1)",
+    "萬華": "20638(1)",
+    "板橋": "20639(1)",
+    "鶯歌": "20642(1)",
+    "中壢": "20645(1)",
+    "楊梅": "20647(1)",
+    "湖口": "20649(1)",
+    "竹北": "20651(1)",
+    "六家": "28089(1)",
+    "竹南": "20655(1)",
+    "銅鑼": "2381(2)",
+    "三義": "20661(1)",
+    "豐原": "20664(1)",
+    "清水": "752(4)",
+    "沙鹿": "20720(1)",
+    "龍井": "20721(1)",
+    "大慶": "20667(1)",
+    "烏日": "20668(1)",
+    "員林": "20672(1)",
+    "田中": "20675(1)",
+    "二水": "20676(1)",
+    "林內": "20677(1)",
+    "斗六": "20679(1)",
+    "斗南": "20680(1)",
+    "新營": "20688(1)",
+    "柳營": "20689(1)",
+    "沙崙": "331(4)",
+    "永康": "20695(1)",
+    "新市": "20694(1)",
+    "善化": "20693(1)",
+    "楠梓": "20703(1)",
+    "岡山": "20701(1)",
+    "鳳山": "20727(1)",
+    "大湖": "20699(1)",
+    "林邊": "20740(1)",
+    "蘇澳": "20777(1)",
+    "東澳": "20780(1)",
+    "新城": "20787(1)",
+    "吉安": "20791(1)",
+    "壽豐": "20794(1)",
+    "富源": "20801(1)",
+    "玉里": "20805(1)",
+    "富里": "20809(1)",
+    "池上": "20810(1)",
+    "關山": "20812(1)",
+    "鹿野": "20816(1)",
+    "知本": "20830(1)",
+    "大武": "20825(1)",
+    "南港": "21389(1)",
+    "左營": "20704(1)",
+    "新": "6452(1)",
+    "竹": "20650(1)",
+    "南": "20695(1)",
+    "港": "7205(1)",
+    "東": "20817(1)",
+    "西": "11879(1)",
+    "北": "20636(1)",
+    "中": "20665(1)",
+    "大": "3543(1)",
+    "頭": "24443(1)",
+    "份": "2282(1)",
+    "林": "20657(1)",
+    "內": "2599(1)",
+    "雙": "20758(1)",
+    "溪": "20757(1)",
+    "福": "20760(1)",
+    "隆": "20762(1)",
+    "暖": "20754(1)",
+    "堵": "20750(1)",
+    "瑞": "20756(1)",
+    "芳": "20759(1)",
+    "水": "20678(1)",
+    "沙": "20719(1)",
+    "鹿": "20722(1)",
+    "田": "20674(1)",
+    "員": "20671(1)",
+    "斗": "20681(1)",
+    "仁": "20725(1)",
+    "武": "20726(1)",
+    "換": "8406(1)",
+
     // 站名
     "基隆": "20752(1)",
     "台北": "20637(1)",
@@ -2431,29 +3757,65 @@ function playTaigiTTS(phraseText, audioIds) {
     if (Array.isArray(audioIds)) {
         ids = audioIds;
     } else if (typeof audioIds === 'string') {
-        const cleanPhrase = phraseText.replace(/[【】]/g, '');
-        if (cleanPhrase === "票口") {
-            ids = [taigiAudioMap["票"], taigiAudioMap["口"]];
-        } else if (cleanPhrase === "售票機") {
-            ids = [taigiAudioMap["賣"], taigiAudioMap["票"]];
-        } else if (cleanPhrase === "飛機") {
-            ids = [taigiAudioMap["飛行機"]];
-        } else if (cleanPhrase === "著矣") {
-            ids = [taigiAudioMap["著"], taigiAudioMap["矣"]];
-        } else if (cleanPhrase === "毋著喔") {
-            ids = [taigiAudioMap["毋著"], taigiAudioMap["喔"]];
+        if (/\d+/.test(audioIds)) {
+            ids = [audioIds];
         } else {
+            const cleanPhrase = phraseText.replace(/[【】]/g, '');
+            // Try whole phrase first
             const mappedId = taigiAudioMap[cleanPhrase];
             if (mappedId) {
                 ids = [mappedId];
+            } else {
+                // Character-by-character fallback
+                for (let char of cleanPhrase) {
+                    const charId = taigiAudioMap[char];
+                    if (charId) {
+                        ids.push(charId);
+                    }
+                }
             }
         }
     }
     
     if (ids.length > 0) {
         playAudioQueue(ids, phraseText);
+    } else if (typeof audioIds === 'string' && audioIds.length > 3) {
+        // audioIds 是台羅拼音 (POJ/TL) 字串 — 嘗試用 nan-TW 台語語音引擎直接朗讀
+        playTaiwaneseVoice(audioIds, phraseText);
     } else {
         playOfflineVoiceFallback(phraseText);
+    }
+}
+
+// 使用 nan-TW 台語語音引擎朗讀台羅拼音
+function playTaiwaneseVoice(pojText, fallbackZhText) {
+    if (!('speechSynthesis' in window)) {
+        playOfflineVoiceFallback(fallbackZhText);
+        return;
+    }
+
+    const voices = window.speechSynthesis.getVoices();
+    // 嘗試找台語 nan-TW 聲音
+    const nanVoice = voices.find(v =>
+        v.lang === 'nan-TW' ||
+        v.lang === 'nan' ||
+        v.lang.startsWith('nan') ||
+        v.name.toLowerCase().includes('taiwanese') ||
+        v.name.toLowerCase().includes('hokkien') ||
+        v.name.toLowerCase().includes('min nan')
+    );
+
+    if (nanVoice) {
+        updateBadge("google");
+        const utterance = new SpeechSynthesisUtterance(pojText);
+        utterance.voice = nanVoice;
+        utterance.lang = 'nan-TW';
+        utterance.rate = speechRate;
+        window.speechSynthesis.cancel();
+        window.speechSynthesis.speak(utterance);
+    } else {
+        // 沒有 nan-TW 聲音時，用同音字將漢字轉換後以 zh-TW 播放
+        playOfflineVoiceFallback(fallbackZhText);
     }
 }
 
@@ -2614,23 +3976,48 @@ function playFullJourneyAudio() {
     const endId = document.getElementById("end-station").value;
     const trainClass = document.getElementById("train-class").value;
     const depTimeSelect = document.getElementById("departure-time");
+    if (!depTimeSelect) return;
     const depTimeText = depTimeSelect.options[depTimeSelect.selectedIndex].text;
     
     const startStation = stations.find(s => s.id === startId);
     const endStation = stations.find(s => s.id === endId);
     
-    // 計算票價
-    const distance = getDistanceBetween(startId, endId);
-    const rate = trainClass === "express" ? 3.5 : 2.0;
-    const cost = Math.round(distance * rate * passengers);
-    const platform = (stations.findIndex(s => s.id === startId) % 4) + 1;
+    const routeInfo = getRoute(startId, endId);
+    const distance = routeInfo.distance;
     
-    // 1. 台語漢字文稿 (用於展示)
-    const trainClassZH = trainClass === "express" ? "自強號" : "區間車";
+    // Compute fare
+    let cost = 0;
+    if (startStation.line === "TRA" && endStation.line === "TRA") {
+        const rate = trainClass === "express" ? 3.5 : 2.0;
+        cost = Math.round(distance * rate * passengers);
+    } else if (startStation.line === "HSR" && endStation.line === "HSR") {
+        cost = Math.round(distance * 4.5 * passengers);
+    } else {
+        // mixed
+        const parts = routeInfo.direction.split("|");
+        const transferTId = parts[1];
+        let traDist = 0;
+        let hsrDist = 0;
+        if (startStation.line === "TRA") {
+            const traT = stations.find(s => s.line === "TRA" && s.transferId === transferTId);
+            const hsrT = stations.find(s => s.line === "HSR" && s.transferId === transferTId);
+            traDist = getDistanceBetween(startId, traT.id);
+            hsrDist = getDistanceBetween(hsrT.id, endId);
+        } else {
+            const hsrT = stations.find(s => s.line === "HSR" && s.transferId === transferTId);
+            const traT = stations.find(s => s.line === "TRA" && s.transferId === transferTId);
+            hsrDist = getDistanceBetween(startId, hsrT.id);
+            traDist = getDistanceBetween(traT.id, endId);
+        }
+        const traCost = Math.round(traDist * (trainClass === "express" ? 3.5 : 2.0));
+        const hsrCost = Math.round(hsrDist * 4.5);
+        cost = (traCost + hsrCost) * passengers;
+    }
+    
     const passengerZH = numberToTaigiText(passengers) + "張";
-    const costZH = costToTaigiText(cost); // xxx箍
+    const costZH = costToTaigiText(cost);
     
-    const rawTimeZH = depTimeText.split(" ")[0]; // 早上/下午/晚上
+    const rawTimeZH = depTimeText.split(" ")[0];
     let periodZH = "早起";
     if (rawTimeZH === "下午") periodZH = "下晡";
     else if (rawTimeZH === "晚上") periodZH = "暗時";
@@ -2641,109 +4028,230 @@ function playFullJourneyAudio() {
     const hourZH = (displayH === 2 ? "兩" : numberToTaigiText(displayH)) + "點";
     const minZH = hourMin[1] === "30" ? "半" : (hourMin[1] === "00" ? "" : numberToTaigiText(parseInt(hourMin[1])) + "分");
     
-    const endName = endStation.nameZH === "台北" ? "臺北" : (endStation.nameZH === "台中" ? "臺中" : (endStation.nameZH === "台南" ? "臺南" : (endStation.nameZH === "台東" ? "臺東" : endStation.nameZH)));
-    const taigiSpeechText = `我欲去${endName}，買${passengerZH}${trainClassZH}票，${periodZH}${hourZH}${minZH}開車，攏總${costZH}。佇${ordinalToTaigiText(platform)}月台等車。`;
+    let platformNum = 1;
+    if (startStation.line === "HSR") {
+        platformNum = startId === "hsr-taipei" ? "2" : "1";
+    } else {
+        const traIdx = stations.filter(s => s.line === "TRA").findIndex(s => s.id === startId);
+        platformNum = (traIdx % 4) + 1;
+    }
     
-    // 2. 產出純台語音軌 ID 陣列
+    const endName = endStation.nameZH;
+    let taigiSpeechText = "";
     let audioSegments = [];
+    
+    // Build audio queue
     audioSegments.push(taigiAudioMap["我"]);
     audioSegments.push(taigiAudioMap["欲"]);
     audioSegments.push(taigiAudioMap["去"]);
     
-    // 車站名在字典中常為繁體「臺」
-    const endStationAudio = taigiAudioMap[endName];
-    if (endStationAudio) audioSegments.push(endStationAudio);
+    // Add destination
+    const destAudio = taigiAudioMap[endName];
+    if (destAudio) audioSegments.push(destAudio);
+    else {
+        // Fallback for destination name character by character
+        for (let char of endName) {
+            const charId = taigiAudioMap[char];
+            if (charId) audioSegments.push(charId);
+        }
+    }
     
-    audioSegments.push(taigiAudioMap["買"]);
-    audioSegments = audioSegments.concat(numberToAudioSegments(passengers, true));
-    audioSegments.push(taigiAudioMap["張"]);
-    
-    if (trainClass === "express") {
-        audioSegments.push(taigiAudioMap["自強"]);
-        audioSegments.push(taigiAudioMap["號"]);
-    } else {
-        audioSegments.push(taigiAudioMap["區間"]);
+    if (startStation.line !== endStation.line) {
+        // Transfer route!
+        const parts = routeInfo.direction.split("|");
+        const transferTId = parts[1];
+        const transSt = stations.find(s => s.transferId === transferTId);
+        const transferZH = transSt ? transSt.nameZH : "";
+        
+        taigiSpeechText = "我欲去" + endName + "，佇" + transferZH + "換車，買" + passengerZH + "票，攏總" + costZH + "。佇" + ordinalToTaigiText(platformNum) + "月台等車。";
+        
+        audioSegments.push(taigiAudioMap["佇"]);
+        const transAudio = taigiAudioMap[transferZH];
+        if (transAudio) audioSegments.push(transAudio);
+        else {
+            for (let char of transferZH) {
+                const charId = taigiAudioMap[char];
+                if (charId) audioSegments.push(charId);
+            }
+        }
+        audioSegments.push(taigiAudioMap["換"]);
         audioSegments.push(taigiAudioMap["車"]);
-    }
-    audioSegments.push(taigiAudioMap["票"]);
-    
-    // 時間處理
-    const m = parseInt(hourMin[1]);
-    let periodHour = h;
-    let periodKey = "早起";
-    if (h >= 12 && h < 18) {
-        periodKey = "下晡";
-        periodHour = h === 12 ? 12 : h - 12;
-    } else if (h >= 18) {
-        periodKey = "暗時";
-        periodHour = h === 12 ? 12 : h - 12;
-    } else if (h === 0) {
-        periodHour = 12;
-    }
-    audioSegments.push(taigiAudioMap[periodKey]);
-    
-    if (periodHour === 2) {
-        audioSegments.push(taigiAudioMap["兩"]);
     } else {
-        audioSegments.push(taigiAudioMap[numberToKanjiDigit(periodHour)]);
+        const trainClassZH = startStation.line === "HSR" ? "高鐵" : (trainClass === "express" ? "自強號" : "區間車");
+        taigiSpeechText = "我欲去" + endName + "，買" + passengerZH + trainClassZH + "票，" + periodZH + hourZH + minZH + "開車，攏總" + costZH + "。佇" + ordinalToTaigiText(platformNum) + "月台等車。";
+        
+        audioSegments.push(taigiAudioMap["買"]);
+        audioSegments = audioSegments.concat(numberToAudioSegments(passengers, true));
+        audioSegments.push(taigiAudioMap["張"]);
+        
+        if (startStation.line === "HSR") {
+            audioSegments.push(taigiAudioMap["高鐵"]);
+        } else if (trainClass === "express") {
+            audioSegments.push(taigiAudioMap["自強"]);
+            audioSegments.push(taigiAudioMap["號"]);
+        } else {
+            audioSegments.push(taigiAudioMap["區間"]);
+            audioSegments.push(taigiAudioMap["車"]);
+        }
+        audioSegments.push(taigiAudioMap["票"]);
+        
+        audioSegments.push(taigiAudioMap[periodZH]);
+        if (displayH === 2) audioSegments.push(taigiAudioMap["兩"]);
+        else audioSegments.push(taigiAudioMap[numberToKanjiDigit(displayH)]);
+        audioSegments.push(taigiAudioMap["點"]);
+        
+        if (hourMin[1] === "30") audioSegments.push(taigiAudioMap["半"]);
+        else if (hourMin[1] !== "00") {
+            audioSegments = audioSegments.concat(numberToAudioSegments(parseInt(hourMin[1]), false));
+            audioSegments.push(taigiAudioMap["分"]);
+        }
+        audioSegments.push(taigiAudioMap["開車"]);
     }
-    audioSegments.push(taigiAudioMap["點"]);
     
-    if (m === 30) {
-        audioSegments.push(taigiAudioMap["半"]);
-    } else if (m > 0) {
-        audioSegments = audioSegments.concat(numberToAudioSegments(m, false));
-        audioSegments.push(taigiAudioMap["分"]);
-    }
-    
-    audioSegments.push(taigiAudioMap["開車"]);
     audioSegments.push(taigiAudioMap["攏總"]);
     audioSegments = audioSegments.concat(numberToAudioSegments(cost, false));
     audioSegments.push(taigiAudioMap["箍"]);
     
     audioSegments.push(taigiAudioMap["佇"]);
     audioSegments.push(taigiAudioMap["第"]);
-    audioSegments.push(taigiAudioMap[numberToKanjiDigit(platform)]);
+    audioSegments.push(taigiAudioMap[numberToKanjiDigit(parseInt(platformNum) || 1)]);
     audioSegments.push(taigiAudioMap["月台"]);
     audioSegments.push(taigiAudioMap["等"]);
     audioSegments.push(taigiAudioMap["車"]);
     
-    // 字幕對照台羅
-    const trainClassPOJ = trainClass === "express" ? "tsū-kiông-hō" : "khu-kan-chhia";
-    const passengerPOJ = getPassengerPOJ(passengers);
-    const hStr = h > 12 ? h - 12 : (h === 0 ? 12 : h);
-    const periodPOJ = h < 12 ? "tsá-khí" : (h < 18 ? "ē-po͘" : "am-sî");
-    const hourPOJStr = hStr === 2 ? "nn̄g tiám" : numberToTaigiPOJ(hStr) + " tiám";
-    const minPOJStr = m === 30 ? " puàn" : (m === 0 ? "" : " " + numberToTaigiPOJ(m) + " hun");
-    const pinyinBreakdown = `Ùi ${startStation.poj} kàu ${endStation.poj}, ${trainClassPOJ} ${passengerPOJ} phiò, ${periodPOJ} ${hourPOJStr}${minPOJStr} khui-chhia, lóng-chóng ${cost} khōo. tī tē-${platform} gue̍h-tâi.`;
-    const mandarinZHText = `從 ${startStation.nameZH} 到 ${endStation.nameZH}，${trainClassZH}票 ${passengers} 張，${depTimeSelect.options[depTimeSelect.selectedIndex].text.split(' ')[0]} ${depTimeSelect.value} 開車，總共 ${cost} 元。請到第 ${platform} 月台候車。`;
-    
-    // 顯示字幕框
+    let pinyinBreakdown = "";
+    if (startStation.line !== endStation.line) {
+        const transSt = stations.find(s => s.transferId === routeInfo.direction.split("|")[1]);
+        pinyinBreakdown = "guá beh khì " + endStation.poj + ", tī " + (transSt ? transSt.poj : "") + " uānn tshia, bé " + getPassengerPOJ(passengers) + " phiò, lóng-tsóng " + costToTaigiPOJ(cost) + ". tī tē-" + numberToTaigiPOJ(platformNum) + " gue̍h-tâi tán tshia.";
+    } else {
+        pinyinBreakdown = "guá beh khì " + endStation.poj + ", bé " + getPassengerPOJ(passengers) + " " + (startStation.line === "HSR" ? "ko-thih" : (trainClass === "express" ? "tsū-kiông-hō" : "khu-kan-tshia")) + " phiò, " + periodZH + " " + numberToTaigiPOJ(displayH) + " tiám " + (hourMin[1] === "30" ? "puàn" : (hourMin[1] === "00" ? "" : numberToTaigiPOJ(parseInt(hourMin[1])) + " hun")) + " khui-tshia, lóng-tsóng " + costToTaigiPOJ(cost) + ". tī tē-" + numberToTaigiPOJ(platformNum) + " gue̍h-tâi tán tshia.";
+    }
+        
     const sentenceBox = document.getElementById("journey-sentence-box");
-    document.getElementById("journey-sentence-zh").textContent = mandarinZHText;
+    document.getElementById("journey-sentence-zh").textContent = taigiSpeechText;
     document.getElementById("journey-sentence-tw").textContent = taigiSpeechText + " \n(" + pinyinBreakdown + ")";
     sentenceBox.classList.add("active");
     
-    // 播放語音：傳送音標陣列以取得 100% 精準台語
     playTaigiTTS(taigiSpeechText, audioSegments);
 }
 
-function getDistanceBetween(startId, endId) {
-    const startIndex = stations.findIndex(s => s.id === startId);
-    const endIndex = stations.findIndex(s => s.id === endId);
-    if (startIndex === endIndex) return 0;
+
+
+function getRoute(startId, endId) {
+    const startStation = stations.find(s => s.id === startId);
+    const endStation = stations.find(s => s.id === endId);
+    if (!startStation || !endStation) return { path: [], distance: 0, direction: "direct" };
     
-    const n = stations.length;
-    let cwDist = 0;
-    let curr = startIndex;
-    while (curr !== endIndex) {
-        let next = (curr + 1) % n;
-        cwDist += (stations[next].dist - stations[curr].dist + totalCircumference) % totalCircumference;
-        curr = next;
+    if (startStation.line === endStation.line) {
+        if (startStation.line === "TRA") {
+            // TRA circular loop routing
+            const stationsTRA = stations.filter(s => s.line === "TRA");
+            const n = stationsTRA.length;
+            const startIndex = stationsTRA.findIndex(s => s.id === startId);
+            const endIndex = stationsTRA.findIndex(s => s.id === endId);
+            
+            // 1. Clockwise
+            let cwPath = [];
+            let cwDist = 0;
+            let curr = startIndex;
+            while (curr !== endIndex) {
+                let next = (curr + 1) % n;
+                cwDist += (stationsTRA[next].dist - stationsTRA[curr].dist + 870) % 870;
+                cwPath.push(stationsTRA[curr]);
+                curr = next;
+            }
+            cwPath.push(stationsTRA[endIndex]);
+            
+            // 2. Counter-Clockwise
+            let ccwPath = [];
+            let ccwDist = 0;
+            curr = startIndex;
+            while (curr !== endIndex) {
+                let prev = (curr - 1 + n) % n;
+                ccwDist += (stationsTRA[curr].dist - stationsTRA[prev].dist + 870) % 870;
+                ccwPath.push(stationsTRA[curr]);
+                curr = prev;
+            }
+            ccwPath.push(stationsTRA[endIndex]);
+            
+            if (cwDist <= ccwDist) {
+                return { path: cwPath, distance: cwDist, direction: "clockwise" };
+            } else {
+                return { path: ccwPath, distance: ccwDist, direction: "counterclockwise" };
+            }
+        } else {
+            // HSR linear routing
+            const stationsHSR = stations.filter(s => s.line === "HSR");
+            const startIndex = stationsHSR.findIndex(s => s.id === startId);
+            const endIndex = stationsHSR.findIndex(s => s.id === endId);
+            
+            let path = [];
+            let distance = 0;
+            if (startIndex <= endIndex) {
+                for (let i = startIndex; i <= endIndex; i++) {
+                    path.push(stationsHSR[i]);
+                }
+                distance = Math.abs(stationsHSR[endIndex].dist - stationsHSR[startIndex].dist);
+                return { path, distance, direction: "hsr-southbound" };
+            } else {
+                for (let i = startIndex; i >= endIndex; i--) {
+                    path.push(stationsHSR[i]);
+                }
+                distance = Math.abs(stationsHSR[startIndex].dist - stationsHSR[endIndex].dist);
+                return { path, distance, direction: "hsr-northbound" };
+            }
+        }
+    } else {
+        // Mixed routing (Transfer!)
+        const stationsTRA = stations.filter(s => s.line === "TRA");
+        const stationsHSR = stations.filter(s => s.line === "HSR");
+        const transfers = ["taipei", "banqiao", "nangang", "hsinchu", "taichung", "tainan", "zuoying"];
+        
+        let bestTransfer = null;
+        let minTotalDist = Infinity;
+        let bestTRAInfo = null;
+        let bestHSRInfo = null;
+        
+        transfers.forEach(tId => {
+            const traT = stationsTRA.find(s => s.transferId === tId);
+            const hsrT = stationsHSR.find(s => s.line === "HSR" && s.transferId === tId);
+            if (traT && hsrT) {
+                let traInfo, hsrInfo;
+                if (startStation.line === "TRA") {
+                    traInfo = getRoute(startId, traT.id);
+                    hsrInfo = getRoute(hsrT.id, endId);
+                } else {
+                    hsrInfo = getRoute(startId, hsrT.id);
+                    traInfo = getRoute(traT.id, endId);
+                }
+                
+                const totalDist = traInfo.distance + hsrInfo.distance;
+                if (totalDist < minTotalDist) {
+                    minTotalDist = totalDist;
+                    bestTransfer = tId;
+                    bestTRAInfo = traInfo;
+                    bestHSRInfo = hsrInfo;
+                }
+            }
+        });
+        
+        if (bestTransfer) {
+            let path, direction;
+            if (startStation.line === "TRA") {
+                path = bestTRAInfo.path.concat(bestHSRInfo.path);
+                direction = "tra-to-hsr|" + bestTransfer;
+            } else {
+                path = bestHSRInfo.path.concat(bestTRAInfo.path);
+                direction = "hsr-to-tra|" + bestTransfer;
+            }
+            return { path, distance: minTotalDist, direction };
+        }
+        return { path: [startStation, endStation], distance: 100, direction: "direct" };
     }
-    
-    let ccwDist = totalCircumference - cwDist;
-    return Math.min(cwDist, ccwDist);
+}
+
+function getDistanceBetween(startId, endId) {
+    return getRoute(startId, endId).distance;
 }
 
 function getPassengerPOJ(num) {
@@ -3402,8 +4910,11 @@ function bindDynamicEvents() {
 
     // 詞彙學堂篩選按鈕
     bindClick("btn-filter-all", () => filterVocab('all'));
-    bindClick("btn-filter-vehicles", () => filterVocab('vehicle'));
-    bindClick("btn-filter-stations", () => filterVocab('station'));
+    bindClick("btn-filter-vehicles", () => filterVocab('vehicles'));
+    bindClick("btn-filter-stations", () => filterVocab('stations'));
+    bindClick("btn-filter-tra-station", () => filterVocab('tra-station'));
+    bindClick("btn-filter-hsr-station", () => filterVocab('hsr-station'));
+    bindClick("btn-export-vocab", exportVocabJSON);
 
     // 時間微調按鈕
     bindClick("btn-clock-dec-1h", () => adjustClockTime(-60));
@@ -3429,6 +4940,36 @@ function bindDynamicEvents() {
     bindClick("quiz-retry-btn", resetQuizInterface);
 }
 
+
+function exportVocabJSON() {
+    const exportData = {
+        title: "台灣鐵路台語詞彙庫",
+        description: "Taiwan Railway Taiwanese (Taigi) Vocabulary — generated by 台灣鐵路四界行",
+        generated: new Date().toISOString(),
+        source_audio_cdn: "https://chhoetaigi.github.io/KipSutianDataMirror/public/20260503-2330/imtong/sutiau/{id}.mp3",
+        sections: {
+            vehicles: vocabData.filter(v => v.type === 'vehicles').map(v => ({ zh: v.zh, tw: v.tw, en: v.en, emoji: v.emoji })),
+            scene:    vocabData.filter(v => v.type === 'stations').map(v => ({ zh: v.zh, tw: v.tw, en: v.en, emoji: v.emoji })),
+            stations: {
+                "TRA": vocabData.filter(v => v.type === 'tra-station').map(v => {
+                    const st = stations.find(s => s.id === v.id);
+                    return { zh: v.zh, tw: v.tw, en: v.en, id: v.id, audio_id: st ? st.audioId : null };
+                }),
+                "HSR": vocabData.filter(v => v.type === 'hsr-station').map(v => {
+                    const st = stations.find(s => s.id === v.id);
+                    return { zh: v.zh, tw: v.tw, en: v.en, id: v.id, audio_id: st ? st.audioId : null };
+                })
+            }
+        }
+    };
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'taiwan_railway_taigi_vocab.json';
+    a.click();
+    URL.revokeObjectURL(url);
+}
 
 </script>
 </body>

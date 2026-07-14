@@ -1380,3 +1380,20 @@ footer {
     font-weight: 500;
     border-top: 1px solid var(--card-border);
 }
+
+/* Vocab Export Button Styles */
+.vocab-filter-export {
+    margin-top: 15px;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+}
+.filter-export-btn {
+    background: linear-gradient(135deg, #636E72, #2D3436);
+    color: white;
+    border-color: transparent;
+}
+[data-theme="dark"] .filter-export-btn {
+    background: linear-gradient(135deg, #485460, #2f3640);
+}
+.filter-export-btn:hover { opacity: 0.9; }
