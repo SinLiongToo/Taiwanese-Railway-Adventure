@@ -1680,8 +1680,6 @@ function animateTrainOnMap(route) {
 // ==========================================
 // 9. 語音朗讀合成模組 (Speech Synthesis)
 // ==========================================
-// Audio States
-let activeQueueAudio = null;
 
 const taigiAudioMap = {
     // --- Crawled station audio mappings & Character fallbacks ---
@@ -2077,6 +2075,36 @@ async function fetchAndDecodeAudio(id, ctx) {
     return trimmed;
 }
 
+// HTML5 Audio 備援佇列播放器（用於 file:// 或 fetch 受限環境）
+function playSequentialHTML5Audio(cleanIds, speed, token, fallbackText) {
+    let index = 0;
+    function playNext() {
+        if (token !== queueCancelToken) return;
+        if (index >= cleanIds.length) return;
+        const id = cleanIds[index];
+        const cdnUrl = `https://chhoetaigi.github.io/KipSutianDataMirror/public/20260503-2330/imtong/sutiau/${id}.mp3`;
+        const audio = new Audio(cdnUrl);
+        activeQueueAudio = audio;
+        audio.playbackRate = speed;
+        audio.onended = () => {
+            if (token !== queueCancelToken) return;
+            index++;
+            playNext();
+        };
+        audio.onerror = (e) => {
+            console.warn(`HTML5 audio playback error for ID ${id}, fallback to Web Speech...`, e);
+            if (token !== queueCancelToken) return;
+            playOfflineVoiceFallback(fallbackText);
+        };
+        audio.play().catch(err => {
+            console.warn(`HTML5 audio play failed for ID ${id}, fallback to Web Speech...`, err);
+            if (token !== queueCancelToken) return;
+            playOfflineVoiceFallback(fallbackText);
+        });
+    }
+    playNext();
+}
+
 // Web Audio API 高效無縫連續音訊排程播放器
 let queueCancelToken = 0;
 async function playAudioQueue(audioIds, fallbackText) {
@@ -2097,7 +2125,7 @@ async function playAudioQueue(audioIds, fallbackText) {
 
     const ctx = getAudioContext();
     if (!ctx) {
-        playOfflineVoiceFallback(fallbackText);
+        playSequentialHTML5Audio(cleanIds, speed, token, fallbackText);
         return;
     }
 
@@ -2115,7 +2143,8 @@ async function playAudioQueue(audioIds, fallbackText) {
         
         const validBuffers = buffers.filter(b => b !== null);
         if (validBuffers.length === 0) {
-            playOfflineVoiceFallback(fallbackText);
+            // 如果 Web Audio API fetch 因環境受阻，退回 HTML5 Audio 佇列播放
+            playSequentialHTML5Audio(cleanIds, speed, token, fallbackText);
             return;
         }
 
@@ -2140,9 +2169,9 @@ async function playAudioQueue(audioIds, fallbackText) {
             };
         });
     } catch (err) {
-        console.warn("Web Audio queue execution failed, falling back to Web Speech:", err);
+        console.warn("Web Audio queue execution failed, falling back to HTML5 Audio:", err);
         if (token === queueCancelToken) {
-            playOfflineVoiceFallback(fallbackText);
+            playSequentialHTML5Audio(cleanIds, speed, token, fallbackText);
         }
     }
 }
