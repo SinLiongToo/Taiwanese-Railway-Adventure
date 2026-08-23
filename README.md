@@ -63,7 +63,7 @@
 
 * **雙語支持 (Localization)**：支援華語 (Traditional Chinese) 與英語 (English) 的一鍵即時切換。
 * **高精準雙模語音引擎 (TTS Engine)**：
-  1. **Web Audio API 無縫排程與教育部真人發音庫**：採用中華民國教育部《臺灣台語常用詞辭典》官方真人語音（由 ChhoeTaigi 社群開源維護的 [KipSutianDataMirror](https://github.com/ChhoeTaigi/KipSutianDataMirror) 鏡像庫）。使用現代 **Web Audio API (`AudioContext`)** 進行音訊平行預載與解碼，內建 **「自動靜音裁切 (Silence Trimming)」** 與 **「零延遲微重疊排程」** 演算法，徹底消除單字錄音檔前後的無聲空白與換曲延遲，詞與詞之間的銜接流暢自然，達到如真人般連續朗讀的體驗。
+  1. **預先載入無縫銜接與教育部真人發音庫 (Preloaded Gapless Engine)**：採用中華民國教育部《臺灣台語常用詞辭典》官方真人語音（由 ChhoeTaigi 社群開源維護的 [KipSutianDataMirror](https://github.com/ChhoeTaigi/KipSutianDataMirror) 鏡像庫）。採用平行預載機制消除網路延遲，並利用 `requestAnimationFrame` 高頻偵測在單字結尾無聲處（提前 80ms）平滑接續下一詞彙，保留 100% 自然真人聲調與原音頻率，同時徹底解決詞與詞之間的生硬停頓。
   2. **本地離線擬真備援**：若網路斷線或語音伺服器連線失敗，系統會自動降級切換至本地 Web Speech API 語音引擎（`zh-TW`），並透過精準設計的「台語同音字對照表」替換，以國語同音字發音（如將「台北」模擬為「台八」發音），確保在離線狀態下依然保有語音學習功能。
 * **響應式網頁設計 (RWD)**：支援手機、平板與桌上型電腦，並特別對觸控事件與字體對比度進行了無障礙優化。
 

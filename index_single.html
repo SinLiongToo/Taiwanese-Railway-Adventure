@@ -3011,23 +3011,8 @@ let quizHasAnswered = false;
 // Audio States
 let activeAudio = null;
 let activeQueueAudio = null;
-let activeSources = [];
-let audioCtx = null;
-const audioBufferCache = new Map();
+let currentPlayingAudio = null;
 let voiceEngineMode = "google"; // "google" or "local"
-
-function getAudioContext() {
-    if (!audioCtx) {
-        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-        if (AudioContextClass) {
-            audioCtx = new AudioContextClass();
-        }
-    }
-    if (audioCtx && audioCtx.state === 'suspended') {
-        audioCtx.resume();
-    }
-    return audioCtx;
-}
 
 function stopAllAudio() {
     if (activeAudio) {
@@ -3038,11 +3023,9 @@ function stopAllAudio() {
         try { activeQueueAudio.pause(); } catch(e){}
         activeQueueAudio = null;
     }
-    if (activeSources && activeSources.length > 0) {
-        activeSources.forEach(s => {
-            try { s.stop(); } catch(e){}
-        });
-        activeSources = [];
+    if (currentPlayingAudio) {
+        try { currentPlayingAudio.pause(); } catch(e){}
+        currentPlayingAudio = null;
     }
     if ('speechSynthesis' in window) {
         window.speechSynthesis.cancel();
@@ -3760,117 +3743,9 @@ function timeToAudioSegments(timeStr) {
     return segments;
 }
 
-// 自動裁切 AudioBuffer 前後無聲空白（避免詞與詞之間停頓過大）並施加微淡入淡出防止爆音
-function trimAudioBuffer(buffer, threshold = 0.012) {
-    const numChannels = buffer.numberOfChannels;
-    const sampleRate = buffer.sampleRate;
-    const length = buffer.length;
-    
-    // 尋找有效音訊開頭
-    let start = length;
-    for (let c = 0; c < numChannels; c++) {
-        const data = buffer.getChannelData(c);
-        for (let i = 0; i < length; i++) {
-            if (Math.abs(data[i]) > threshold) {
-                if (i < start) start = i;
-                break;
-            }
-        }
-    }
-    if (start === length) return buffer; // 全靜音
-
-    // 尋找有效音訊結尾
-    let end = 0;
-    for (let c = 0; c < numChannels; c++) {
-        const data = buffer.getChannelData(c);
-        for (let i = length - 1; i >= 0; i--) {
-            if (Math.abs(data[i]) > threshold) {
-                if (i > end) end = i;
-                break;
-            }
-        }
-    }
-    
-    // 保留微小緩衝（約 5ms）確保起音與收音自然
-    const margin = Math.floor(sampleRate * 0.005);
-    start = Math.max(0, start - margin);
-    end = Math.min(length - 1, end + margin);
-
-    const trimmedLength = end - start + 1;
-    if (trimmedLength <= 0) return buffer;
-
-    const ctx = getAudioContext();
-    if (!ctx) return buffer;
-    
-    const trimmedBuffer = ctx.createBuffer(numChannels, trimmedLength, sampleRate);
-    const fadeSamples = Math.min(Math.floor(sampleRate * 0.004), Math.floor(trimmedLength / 4)); // ~4ms 微淡入淡出
-    
-    for (let c = 0; c < numChannels; c++) {
-        const srcData = buffer.getChannelData(c);
-        const destData = trimmedBuffer.getChannelData(c);
-        for (let i = 0; i < trimmedLength; i++) {
-            let sample = srcData[start + i];
-            if (i < fadeSamples) {
-                sample *= (i / fadeSamples);
-            } else if (i > trimmedLength - fadeSamples) {
-                sample *= ((trimmedLength - i) / fadeSamples);
-            }
-            destData[i] = sample;
-        }
-    }
-    return trimmedBuffer;
-}
-
-// 異步取得並解碼音訊（具快取機制）
-async function fetchAndDecodeAudio(id, ctx) {
-    if (audioBufferCache.has(id)) {
-        return audioBufferCache.get(id);
-    }
-    const cdnUrl = `https://chhoetaigi.github.io/KipSutianDataMirror/public/20260503-2330/imtong/sutiau/${id}.mp3`;
-    const response = await fetch(cdnUrl);
-    if (!response.ok) {
-        throw new Error(`HTTP ${response.status} for audio ${id}`);
-    }
-    const arrayBuffer = await response.arrayBuffer();
-    const rawBuffer = await ctx.decodeAudioData(arrayBuffer);
-    const trimmed = trimAudioBuffer(rawBuffer);
-    audioBufferCache.set(id, trimmed);
-    return trimmed;
-}
-
-// HTML5 Audio 備援佇列播放器（用於 file:// 或 fetch 受限環境）
-function playSequentialHTML5Audio(cleanIds, speed, token, fallbackText) {
-    let index = 0;
-    function playNext() {
-        if (token !== queueCancelToken) return;
-        if (index >= cleanIds.length) return;
-        const id = cleanIds[index];
-        const cdnUrl = `https://chhoetaigi.github.io/KipSutianDataMirror/public/20260503-2330/imtong/sutiau/${id}.mp3`;
-        const audio = new Audio(cdnUrl);
-        activeQueueAudio = audio;
-        audio.playbackRate = speed;
-        audio.onended = () => {
-            if (token !== queueCancelToken) return;
-            index++;
-            playNext();
-        };
-        audio.onerror = (e) => {
-            console.warn(`HTML5 audio playback error for ID ${id}, fallback to Web Speech...`, e);
-            if (token !== queueCancelToken) return;
-            playOfflineVoiceFallback(fallbackText);
-        };
-        audio.play().catch(err => {
-            console.warn(`HTML5 audio play failed for ID ${id}, fallback to Web Speech...`, err);
-            if (token !== queueCancelToken) return;
-            playOfflineVoiceFallback(fallbackText);
-        });
-    }
-    playNext();
-}
-
-// Web Audio API 高效無縫連續音訊排程播放器
+// 高效預載與平滑接續的台語佇列播放器 (保留 100% 真人自然聲調，無縫接音消除詞間靜音)
 let queueCancelToken = 0;
-async function playAudioQueue(audioIds, fallbackText) {
+function playAudioQueue(audioIds, fallbackText) {
     queueCancelToken++;
     const token = queueCancelToken;
 
@@ -3886,57 +3761,79 @@ async function playAudioQueue(audioIds, fallbackText) {
 
     updateBadge("google");
 
-    const ctx = getAudioContext();
-    if (!ctx) {
-        playSequentialHTML5Audio(cleanIds, speed, token, fallbackText);
-        return;
-    }
-
-    try {
-        // 平行載入並解碼佇列中所有音訊
-        const bufferPromises = cleanIds.map(id => 
-            fetchAndDecodeAudio(id, ctx).catch(err => {
-                console.warn(`Audio fetch/decode failed for ID ${id}:`, err);
-                return null;
-            })
-        );
-        
-        const buffers = await Promise.all(bufferPromises);
-        if (token !== queueCancelToken) return; // 已被後續的播放操作取代
-        
-        const validBuffers = buffers.filter(b => b !== null);
-        if (validBuffers.length === 0) {
-            // 如果 Web Audio API fetch 因環境受阻，退回 HTML5 Audio 佇列播放
-            playSequentialHTML5Audio(cleanIds, speed, token, fallbackText);
-            return;
+    // 1. 預先建立所有音訊物件並預載，避免播放過程中產生網路換曲延遲
+    const audioElements = cleanIds.map(id => {
+        const cdnUrl = `https://chhoetaigi.github.io/KipSutianDataMirror/public/20260503-2330/imtong/sutiau/${id}.mp3`;
+        const audio = new Audio(cdnUrl);
+        audio.preload = "auto";
+        audio.playbackRate = speed;
+        if ('preservesPitch' in audio) {
+            audio.preservesPitch = true;
         }
+        return audio;
+    });
 
-        let nextStartTime = ctx.currentTime + 0.02; // 起始微緩衝
-        const overlapSeconds = 0.015; // 15ms 自然微重疊，完全消除詞間斷裂空隙
+    let index = 0;
 
-        validBuffers.forEach((buf) => {
-            const source = ctx.createBufferSource();
-            source.buffer = buf;
-            source.playbackRate.value = speed;
-            source.connect(ctx.destination);
-            
-            source.start(nextStartTime);
-            activeSources.push(source);
-            
-            const effectiveDuration = buf.duration / speed;
-            nextStartTime += Math.max(0.01, effectiveDuration - overlapSeconds);
-            
-            source.onended = () => {
-                const idx = activeSources.indexOf(source);
-                if (idx !== -1) activeSources.splice(idx, 1);
-            };
+    function playIndex(i) {
+        if (token !== queueCancelToken || i >= audioElements.length) return;
+
+        const audio = audioElements[i];
+        currentPlayingAudio = audio;
+        audio.playbackRate = speed;
+
+        let hasTriggeredNext = false;
+        const triggerNext = () => {
+            if (hasTriggeredNext) return;
+            hasTriggeredNext = true;
+            playIndex(i + 1);
+        };
+
+        // 監聽進度：在當前單字尾音即將結束前（約 80ms~100ms）提前銜接下一單字，自然跳過錄音尾部空白
+        const checkProgress = () => {
+            if (token !== queueCancelToken || hasTriggeredNext) return;
+            if (audio.duration && audio.duration > 0.15) {
+                const remaining = audio.duration - audio.currentTime;
+                // 當前詞彙只剩 0.08 秒以下時，平滑銜接下一個詞
+                if (remaining <= 0.08) {
+                    triggerNext();
+                    return;
+                }
+            }
+            if (!audio.paused && !audio.ended) {
+                requestAnimationFrame(checkProgress);
+            }
+        };
+
+        audio.onplay = () => {
+            requestAnimationFrame(checkProgress);
+        };
+
+        audio.onended = () => {
+            if (token !== queueCancelToken) return;
+            triggerNext();
+        };
+
+        audio.onerror = (e) => {
+            console.warn(`Audio error at index ${i}, fallback to next or Web Speech:`, e);
+            if (token !== queueCancelToken) return;
+            if (i + 1 < audioElements.length) {
+                triggerNext();
+            } else {
+                playOfflineVoiceFallback(fallbackText);
+            }
+        };
+
+        audio.play().then(() => {
+            requestAnimationFrame(checkProgress);
+        }).catch(err => {
+            console.warn(`Audio play failed at index ${i}:`, err);
+            if (token !== queueCancelToken) return;
+            playOfflineVoiceFallback(fallbackText);
         });
-    } catch (err) {
-        console.warn("Web Audio queue execution failed, falling back to HTML5 Audio:", err);
-        if (token === queueCancelToken) {
-            playSequentialHTML5Audio(cleanIds, speed, token, fallbackText);
-        }
     }
+
+    playIndex(0);
 }
 
 function playTaigiTTS(phraseText, audioIds) {
