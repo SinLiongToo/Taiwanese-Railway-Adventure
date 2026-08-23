@@ -1111,7 +1111,7 @@ const vocabData = [
     { zh: "火車", tw: "hoé-chhia", en: "Train", emoji: " Train 🚄", type: "vehicles" },
     { zh: "捷運", tw: "chia̍t-ūn", en: "MRT/Metro", emoji: " Metro 🚇", type: "vehicles" },
     { zh: "公車", tw: "kong-chhia", en: "Bus", emoji: " Bus 🚌", type: "vehicles" },
-    { zh: "飛機", tw: "poe-ki", en: "Airplane", emoji: " Plane ✈️", type: "vehicles" },
+    { zh: "飛行機", tw: "hui-lêng-ki", en: "Airplane", emoji: " Plane ✈️", type: "vehicles" },
     { zh: "鐵馬", tw: "thih-bé", en: "Bicycle", emoji: " Bike 🚲", type: "vehicles" },
     { zh: "船", tw: "chûn", en: "Ship/Boat", emoji: " Ship 🚢", type: "vehicles" },
     { zh: "計程車", tw: "kè-thêng-chhia", en: "Taxi", emoji: " Taxi 🚕", type: "vehicles" },
@@ -1136,7 +1136,7 @@ const twHomophones = {
     "台南": "台南", "高雄": "勾雄", "屏東": "屏東", "台東": "台東",
     "花蓮": "花連", "宜蘭": "宜蘭",
     // 詞彙
-    "火車": "毀車", "捷運": "基溫", "公車": "公車", "飛機": "杯機",
+    "火車": "毀車", "捷運": "基溫", "公車": "公車", "飛行機": "灰靈基", "飛機": "灰靈基",
     "鐵馬": "鐵杯", "船": "寸", "計程車": "給聽車", "高鐵": "高鐵",
     "月台": "月台", "火車頭": "毀車頭", "票口": "標口", "車廂": "車相",
     "車票": "車標", "司機": "司機", "售票機": "休標基", "鐵路": "鐵路",
@@ -1817,7 +1817,7 @@ const taigiAudioMap = {
     "火車": "1242(1)",
     "捷運": "7397(1)",
     "公車": "23445(1)",
-    "飛機": "5587(1),22337(1)",
+    "飛機": "5591(1)",
     "飛行機": "5591(1)",
     "鐵馬": "13148(1)",
     "船": "7784(1)",
@@ -1967,8 +1967,18 @@ function timeToAudioSegments(timeStr) {
     segments.push(taigiAudioMap[periodKey]);
     
     // 小時
-    if (displayHour === 2) {
-        segments.push(taigiAudioMap["兩"]);
+    if (displayHour === 1) {
+        segments.push(taigiAudioMap["一_quantity"]); // chi̍t (tsi̍t) tiám
+    } else if (displayHour === 2) {
+        segments.push(taigiAudioMap["兩"]); // nn̄g tiám
+    } else if (displayHour === 11) {
+        segments.push(taigiAudioMap["十"]);
+        segments.push(taigiAudioMap["一_digit"]); // tsa̍p-it tiám
+    } else if (displayHour === 12) {
+        segments.push(taigiAudioMap["十"]);
+        segments.push(taigiAudioMap["二"]); // tsa̍p-jī tiám
+    } else if (displayHour === 10) {
+        segments.push(taigiAudioMap["十"]);
     } else {
         segments.push(taigiAudioMap[numberToKanjiDigit(displayHour)]);
     }
@@ -1978,7 +1988,7 @@ function timeToAudioSegments(timeStr) {
     if (min === 30) {
         segments.push(taigiAudioMap["半"]);
     } else if (min > 0) {
-        segments = segments.concat(numberToAudioSegments(min, false));
+        segments = segments.concat(numberToAudioSegments(min, true));
         segments.push(taigiAudioMap["分"]);
     }
     
@@ -2459,13 +2469,24 @@ function playFullJourneyAudio() {
         audioSegments.push(taigiAudioMap["票"]);
         
         audioSegments.push(taigiAudioMap[periodZH]);
-        if (displayH === 2) audioSegments.push(taigiAudioMap["兩"]);
-        else audioSegments.push(taigiAudioMap[numberToKanjiDigit(displayH)]);
+        if (displayH === 1) audioSegments.push(taigiAudioMap["一_quantity"]);
+        else if (displayH === 2) audioSegments.push(taigiAudioMap["兩"]);
+        else if (displayH === 11) {
+            audioSegments.push(taigiAudioMap["十"]);
+            audioSegments.push(taigiAudioMap["一_digit"]);
+        } else if (displayH === 12) {
+            audioSegments.push(taigiAudioMap["十"]);
+            audioSegments.push(taigiAudioMap["二"]);
+        } else if (displayH === 10) {
+            audioSegments.push(taigiAudioMap["十"]);
+        } else {
+            audioSegments.push(taigiAudioMap[numberToKanjiDigit(displayH)]);
+        }
         audioSegments.push(taigiAudioMap["點"]);
         
         if (hourMin[1] === "30") audioSegments.push(taigiAudioMap["半"]);
         else if (hourMin[1] !== "00") {
-            audioSegments = audioSegments.concat(numberToAudioSegments(parseInt(hourMin[1]), false));
+            audioSegments = audioSegments.concat(numberToAudioSegments(parseInt(hourMin[1]), true));
             audioSegments.push(taigiAudioMap["分"]);
         }
         audioSegments.push(taigiAudioMap["開車"]);
@@ -3159,11 +3180,11 @@ function updateClockReadout() {
     
     // 台語口語時間轉換 (早起、下晡、暗時)
     const period = clockHour < 12 ? "早起" : (clockHour < 18 ? "下晡" : "暗時");
-    const periodEN = clockHour < 12 ? "tsán-khí" : (clockHour < 18 ? "ē-po͘" : "am-sî");
+    const periodEN = clockHour < 12 ? "tsá-khí" : (clockHour < 18 ? "ē-po͘" : "àm-sî");
     
     const displayHour = clockHour > 12 ? clockHour - 12 : (clockHour === 0 ? 12 : clockHour);
     const hourText = displayHour === 2 ? "兩點" : numberToTaigiText(displayHour) + "點";
-    const hourPOJ = (displayHour === 2 ? "nn̄g" : digitsPOJ[displayHour]) + " tiám";
+    const hourPOJ = (displayHour === 2 ? "nn̄g" : (displayHour === 1 ? "chi̍t" : digitsPOJ[displayHour])) + " tiám";
     
     let minText = "";
     let minPOJ = "";
@@ -3182,9 +3203,7 @@ function updateClockReadout() {
 }
 
 function getMinutePOJ(min) {
-    if (min === 15) return "tsa̍p-gōo";
-    if (min === 45) return "sì-tsa̍p-gōo";
-    return min.toString();
+    return numberToTaigiPOJ(min, true);
 }
 
 function adjustClockTime(amount) {
