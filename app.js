@@ -1800,7 +1800,8 @@ const taigiAudioMap = {
     "十": "54(1)",
     "兩": "3584(1)",      // nn̄g
     "百": "2585(1)",      // pah
-    "千": "180(1)",       // tshian
+    "千": "189(1)",       // tshing / chheng (白讀數詞, 如一千 chi̍t-chheng)
+    "千_wen": "180(1)",   // tshian (文讀)
     
     // 時間與單位
     "早起": "2517(1)",
@@ -2282,7 +2283,7 @@ function costToTaigiPOJ(cost) {
     if (tempCost >= 1000) {
         const thousands = Math.floor(tempCost / 1000);
         const prefix = thousands === 2 ? "nn̄g" : pojDigitsList[thousands];
-        parts.push(prefix + " tshian");
+        parts.push(prefix + " chheng");
         tempCost = tempCost % 1000;
         if (tempCost > 0 && tempCost < 100) {
             parts.push("lîng");
