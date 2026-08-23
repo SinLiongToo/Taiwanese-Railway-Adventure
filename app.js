@@ -1866,7 +1866,7 @@ function numberToAudioSegments(num, isQuantity = false) {
     if (num >= 1000) {
         const thousands = Math.floor(num / 1000);
         if (thousands === 1) {
-            segments.push(taigiAudioMap["一_digit"]);
+            segments.push(taigiAudioMap["一_quantity"]); // chi̍t (tsi̍t)
         } else if (thousands === 2) {
             segments.push(taigiAudioMap["兩"]);
         } else {
@@ -1880,7 +1880,7 @@ function numberToAudioSegments(num, isQuantity = false) {
     if (num >= 100) {
         const h = Math.floor(num / 100);
         if (h === 1) {
-            segments.push(taigiAudioMap["一_digit"]);
+            segments.push(taigiAudioMap["一_quantity"]); // chi̍t (tsi̍t)
         } else if (h === 2) {
             segments.push(taigiAudioMap["兩"]);
         } else {
@@ -2282,7 +2282,7 @@ function costToTaigiPOJ(cost) {
     if (tempCost >= 1000) {
         const thousands = Math.floor(tempCost / 1000);
         const prefix = thousands === 2 ? "nn̄g" : pojDigitsList[thousands];
-        parts.push(prefix + " tsian");
+        parts.push(prefix + " tshian");
         tempCost = tempCost % 1000;
         if (tempCost > 0 && tempCost < 100) {
             parts.push("lîng");
