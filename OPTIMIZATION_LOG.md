@@ -67,7 +67,13 @@
     * **語速自由拉動**：在網頁頂部導覽控制區加入了「語速調節滑桿 (Speech Rate Controller)」，使用者可在 `0.5x`（慢速學習）至 `1.5x`（快速口語）之間自由調整發音速度，調整間距為 `0.1x`。
     * **多引擎速率同步**：語速調整會即時且同步地套用於教育部官方真人發音播放器（透過設定 `HTMLMediaElement.playbackRate`）與本地 SpeechSynthesis 語音合成引擎（設定 `SpeechSynthesisUtterance.rate`）。
     * **語速設定持久化**：語速設定會寫入瀏覽器 `localStorage` 的 `app_speech_rate` 中，下次開啟網頁時會自動載入偏好語速，提升學習體驗。
-
+  * **Web Audio API 無縫排程與自動靜音裁切升級 (2026-08-24 重大更新)**：
+    * **問題**：辭典錄製的單字/單詞 MP3 音檔在開頭與結尾普遍存在 50ms～250ms 的環境靜音空白，加上舊版 `new Audio()` 的 `onended` 切換事件會產生額外載入與解碼間隙，導致長句子播放時「詞與詞之間的停頓過於明顯且斷續」，聽感不自然。
+    * **升級架構**：
+      1. **AudioContext 原生排程**：全面重構 `playAudioQueue`，改採 `AudioContext` + `AudioBufferSourceNode` 高精度時間軸排程。
+      2. **平行預載與快取 (Parallel Decode & In-Memory Cache)**：播放前並行 `fetch` 與 `decodeAudioData` 所有音訊片段，並以 `Map` 建立記憶體快取，大幅縮短反應時間。
+      3. **自動靜音裁切 (Silence Trimming)**：實作 `trimAudioBuffer` 演算法，動態掃描音訊振幅並裁切前後無聲段落（保留 5ms 緩衝），並加上微淡入淡出 (micro fade) 避免邊界爆音。
+      4. **自然微重疊 (Seamless Overlap)**：在排程時間軸上施加 15ms 的無縫微重疊銜接，使語音流暢緊湊，徹底消除生硬停頓感。
 
 ---
 

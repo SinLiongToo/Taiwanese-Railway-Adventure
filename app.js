@@ -1247,7 +1247,44 @@ let quizHasAnswered = false;
 
 // Audio States
 let activeAudio = null;
+let activeQueueAudio = null;
+let activeSources = [];
+let audioCtx = null;
+const audioBufferCache = new Map();
 let voiceEngineMode = "google"; // "google" or "local"
+
+function getAudioContext() {
+    if (!audioCtx) {
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        if (AudioContextClass) {
+            audioCtx = new AudioContextClass();
+        }
+    }
+    if (audioCtx && audioCtx.state === 'suspended') {
+        audioCtx.resume();
+    }
+    return audioCtx;
+}
+
+function stopAllAudio() {
+    if (activeAudio) {
+        try { activeAudio.pause(); } catch(e){}
+        activeAudio = null;
+    }
+    if (activeQueueAudio) {
+        try { activeQueueAudio.pause(); } catch(e){}
+        activeQueueAudio = null;
+    }
+    if (activeSources && activeSources.length > 0) {
+        activeSources.forEach(s => {
+            try { s.stop(); } catch(e){}
+        });
+        activeSources = [];
+    }
+    if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+    }
+}
 
 // ==========================================
 // 6. 初始化 (On Load)
@@ -1962,15 +1999,91 @@ function timeToAudioSegments(timeStr) {
     return segments;
 }
 
-// 音訊佇列非同步播放器
+// 自動裁切 AudioBuffer 前後無聲空白（避免詞與詞之間停頓過大）並施加微淡入淡出防止爆音
+function trimAudioBuffer(buffer, threshold = 0.012) {
+    const numChannels = buffer.numberOfChannels;
+    const sampleRate = buffer.sampleRate;
+    const length = buffer.length;
+    
+    // 尋找有效音訊開頭
+    let start = length;
+    for (let c = 0; c < numChannels; c++) {
+        const data = buffer.getChannelData(c);
+        for (let i = 0; i < length; i++) {
+            if (Math.abs(data[i]) > threshold) {
+                if (i < start) start = i;
+                break;
+            }
+        }
+    }
+    if (start === length) return buffer; // 全靜音
+
+    // 尋找有效音訊結尾
+    let end = 0;
+    for (let c = 0; c < numChannels; c++) {
+        const data = buffer.getChannelData(c);
+        for (let i = length - 1; i >= 0; i--) {
+            if (Math.abs(data[i]) > threshold) {
+                if (i > end) end = i;
+                break;
+            }
+        }
+    }
+    
+    // 保留微小緩衝（約 5ms）確保起音與收音自然
+    const margin = Math.floor(sampleRate * 0.005);
+    start = Math.max(0, start - margin);
+    end = Math.min(length - 1, end + margin);
+
+    const trimmedLength = end - start + 1;
+    if (trimmedLength <= 0) return buffer;
+
+    const ctx = getAudioContext();
+    if (!ctx) return buffer;
+    
+    const trimmedBuffer = ctx.createBuffer(numChannels, trimmedLength, sampleRate);
+    const fadeSamples = Math.min(Math.floor(sampleRate * 0.004), Math.floor(trimmedLength / 4)); // ~4ms 微淡入淡出
+    
+    for (let c = 0; c < numChannels; c++) {
+        const srcData = buffer.getChannelData(c);
+        const destData = trimmedBuffer.getChannelData(c);
+        for (let i = 0; i < trimmedLength; i++) {
+            let sample = srcData[start + i];
+            if (i < fadeSamples) {
+                sample *= (i / fadeSamples);
+            } else if (i > trimmedLength - fadeSamples) {
+                sample *= ((trimmedLength - i) / fadeSamples);
+            }
+            destData[i] = sample;
+        }
+    }
+    return trimmedBuffer;
+}
+
+// 異步取得並解碼音訊（具快取機制）
+async function fetchAndDecodeAudio(id, ctx) {
+    if (audioBufferCache.has(id)) {
+        return audioBufferCache.get(id);
+    }
+    const cdnUrl = `https://chhoetaigi.github.io/KipSutianDataMirror/public/20260503-2330/imtong/sutiau/${id}.mp3`;
+    const response = await fetch(cdnUrl);
+    if (!response.ok) {
+        throw new Error(`HTTP ${response.status} for audio ${id}`);
+    }
+    const arrayBuffer = await response.arrayBuffer();
+    const rawBuffer = await ctx.decodeAudioData(arrayBuffer);
+    const trimmed = trimAudioBuffer(rawBuffer);
+    audioBufferCache.set(id, trimmed);
+    return trimmed;
+}
+
+// Web Audio API 高效無縫連續音訊排程播放器
 let queueCancelToken = 0;
-function playAudioQueue(audioIds, fallbackText) {
+async function playAudioQueue(audioIds, fallbackText) {
     queueCancelToken++;
     const token = queueCancelToken;
 
-    if (activeAudio) { activeAudio.pause(); activeAudio = null; }
-    if (activeQueueAudio) { activeQueueAudio.pause(); activeQueueAudio = null; }
-    if ('speechSynthesis' in window) { window.speechSynthesis.cancel(); }
+    stopAllAudio();
 
     const speed = speechRate;
     const cleanIds = audioIds.filter(id => id);
@@ -1981,40 +2094,57 @@ function playAudioQueue(audioIds, fallbackText) {
     }
 
     updateBadge("google");
-    
-    let index = 0;
-    
-    function playNext() {
-        if (token !== queueCancelToken) return;
-        if (index >= cleanIds.length) return;
-        
-        const id = cleanIds[index];
-        const cdnUrl = `https://chhoetaigi.github.io/KipSutianDataMirror/public/20260503-2330/imtong/sutiau/${id}.mp3`;
-        
-        const audio = new Audio(cdnUrl);
-        activeQueueAudio = audio;
-        audio.playbackRate = speed;
-        
-        audio.onended = () => {
-            if (token !== queueCancelToken) return;
-            index++;
-            playNext();
-        };
-        
-        audio.onerror = (e) => {
-            console.warn(`Audio playback error for ID ${id}, fallback to Web Speech...`, e);
-            if (token !== queueCancelToken) return;
-            playOfflineVoiceFallback(fallbackText);
-        };
-        
-        audio.play().catch(err => {
-            console.warn(`Audio play failed for ID ${id}, fallback to Web Speech...`, err);
-            if (token !== queueCancelToken) return;
-            playOfflineVoiceFallback(fallbackText);
-        });
+
+    const ctx = getAudioContext();
+    if (!ctx) {
+        playOfflineVoiceFallback(fallbackText);
+        return;
     }
-    
-    playNext();
+
+    try {
+        // 平行載入並解碼佇列中所有音訊
+        const bufferPromises = cleanIds.map(id => 
+            fetchAndDecodeAudio(id, ctx).catch(err => {
+                console.warn(`Audio fetch/decode failed for ID ${id}:`, err);
+                return null;
+            })
+        );
+        
+        const buffers = await Promise.all(bufferPromises);
+        if (token !== queueCancelToken) return; // 已被後續的播放操作取代
+        
+        const validBuffers = buffers.filter(b => b !== null);
+        if (validBuffers.length === 0) {
+            playOfflineVoiceFallback(fallbackText);
+            return;
+        }
+
+        let nextStartTime = ctx.currentTime + 0.02; // 起始微緩衝
+        const overlapSeconds = 0.015; // 15ms 自然微重疊，完全消除詞間斷裂空隙
+
+        validBuffers.forEach((buf) => {
+            const source = ctx.createBufferSource();
+            source.buffer = buf;
+            source.playbackRate.value = speed;
+            source.connect(ctx.destination);
+            
+            source.start(nextStartTime);
+            activeSources.push(source);
+            
+            const effectiveDuration = buf.duration / speed;
+            nextStartTime += Math.max(0.01, effectiveDuration - overlapSeconds);
+            
+            source.onended = () => {
+                const idx = activeSources.indexOf(source);
+                if (idx !== -1) activeSources.splice(idx, 1);
+            };
+        });
+    } catch (err) {
+        console.warn("Web Audio queue execution failed, falling back to Web Speech:", err);
+        if (token === queueCancelToken) {
+            playOfflineVoiceFallback(fallbackText);
+        }
+    }
 }
 
 function playTaigiTTS(phraseText, audioIds) {
@@ -2068,6 +2198,7 @@ function playTaigiTTS(phraseText, audioIds) {
 
 // 使用 nan-TW 台語語音引擎朗讀台羅拼音
 function playTaiwaneseVoice(pojText, fallbackZhText) {
+    stopAllAudio();
     if (!('speechSynthesis' in window)) {
         playOfflineVoiceFallback(fallbackZhText);
         return;
@@ -2090,7 +2221,6 @@ function playTaiwaneseVoice(pojText, fallbackZhText) {
         utterance.voice = nanVoice;
         utterance.lang = 'nan-TW';
         utterance.rate = speechRate;
-        window.speechSynthesis.cancel();
         window.speechSynthesis.speak(utterance);
     } else {
         // 沒有 nan-TW 聲音時，用同音字將漢字轉換後以 zh-TW 播放
@@ -2099,6 +2229,7 @@ function playTaiwaneseVoice(pojText, fallbackZhText) {
 }
 
 function playOfflineVoiceFallback(text) {
+    stopAllAudio();
     if (!('speechSynthesis' in window)) return;
     
     updateBadge("local");

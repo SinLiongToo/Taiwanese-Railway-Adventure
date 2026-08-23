@@ -63,7 +63,7 @@
 
 * **雙語支持 (Localization)**：支援華語 (Traditional Chinese) 與英語 (English) 的一鍵即時切換。
 * **高精準雙模語音引擎 (TTS Engine)**：
-  1. **教育部台語常用詞辭典真人發音拼接**：採用中華民國教育部《臺灣台語常用詞辭典》官方真人語音（由 ChhoeTaigi 社群開源維護的 [KipSutianDataMirror](https://github.com/ChhoeTaigi/KipSutianDataMirror) 鏡像庫），將站名、數字、時間、語法接續詞依序動態排入非同步音軌播放佇列（Sequential Audio Queue Player），播放出 100% 正宗、口語的台語真人發音。
+  1. **Web Audio API 無縫排程與教育部真人發音庫**：採用中華民國教育部《臺灣台語常用詞辭典》官方真人語音（由 ChhoeTaigi 社群開源維護的 [KipSutianDataMirror](https://github.com/ChhoeTaigi/KipSutianDataMirror) 鏡像庫）。使用現代 **Web Audio API (`AudioContext`)** 進行音訊平行預載與解碼，內建 **「自動靜音裁切 (Silence Trimming)」** 與 **「零延遲微重疊排程」** 演算法，徹底消除單字錄音檔前後的無聲空白與換曲延遲，詞與詞之間的銜接流暢自然，達到如真人般連續朗讀的體驗。
   2. **本地離線擬真備援**：若網路斷線或語音伺服器連線失敗，系統會自動降級切換至本地 Web Speech API 語音引擎（`zh-TW`），並透過精準設計的「台語同音字對照表」替換，以國語同音字發音（如將「台北」模擬為「台八」發音），確保在離線狀態下依然保有語音學習功能。
 * **響應式網頁設計 (RWD)**：支援手機、平板與桌上型電腦，並特別對觸控事件與字體對比度進行了無障礙優化。
 
@@ -145,6 +145,7 @@ npx -y live-server ./
 
 | 日期 | 版本 | 更新內容 |
 |------|------|----------|
+| 2026-08-24 | v3.1 | **[NEW] Web Audio API 無縫語音排程升級**：重構 `playAudioQueue` 音訊播放引擎，引入 `AudioContext` 平行預載解碼與快取機制；實作自動靜音裁切 (Silence Trimming) 演算法消除音檔頭尾空白；加入微淡入淡出與 15ms 微重疊無縫銜接排程，徹底解決詞句拼接停頓生硬問題 |
 | 2026-07-15 | v2.0 | **[NEW]** 加入高鐵 12 站詞彙卡；加入台鐵 60+ 小站詞彙卡；詞彙牆新增「🚂 台鐵各站」與「🚄 高鐵各站」分類篩選鈕；TRA 藍色卡片/HSR 紫色卡片視覺標示；更新 README |
 | 2026-07-14 | v1.5 | 加入 Blogger Base64 srcdoc 免託管嵌入代碼 |
 | 2026-07-13 | v1.0 | 初版發布：環島鐵路購票冒險、詞彙牆、時鐘教室、台語大檢定、集章冊 |
